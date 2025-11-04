@@ -38,7 +38,11 @@ export async function createPayment(
   value: number,
   description: string
 ): Promise<PaymentResult> {
-  if (shouldUseMock()) {
+  const useMock = shouldUseMock();
+  console.log('Payment Gateway - useMock:', useMock, 'hasApiKey:', !!process.env.ABACATEPAY_API_KEY);
+  
+  if (useMock) {
+    console.log('Using MOCK payment gateway');
     const paymentId = randomUUID();
     const qrCodeBase64 = Buffer.from('MOCK_QR_CODE_BASE64').toString('base64');
     const pixKey = `00020126330014BR.GOV.BCB.PIX0114${paymentId.slice(0, 14)}5204000053039865802BR5913MOCK PAYMENT6009SAO PAULO62070503***6304`;
@@ -51,6 +55,7 @@ export async function createPayment(
     };
   }
 
+  console.log('Using REAL AbacatePay SDK');
   const abacate = getAbacateClient();
 
   // Valor deve ser em centavos
