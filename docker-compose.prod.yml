@@ -27,6 +27,7 @@ services:
       ABACATEPAY_API_KEY: ${ABACATEPAY_API_KEY}
       ABACATEPAY_WEBHOOK_SECRET: ${ABACATEPAY_WEBHOOK_SECRET}
       USE_MOCK_PAYMENT: ${USE_MOCK_PAYMENT:-true}
+      ALLOWED_ORIGINS: ${ALLOWED_ORIGINS:-http://161.35.115.145:3003,http://localhost:3000}
     depends_on:
       postgres:
         condition: service_healthy
