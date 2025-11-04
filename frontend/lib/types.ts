@@ -5,6 +5,7 @@ export interface Product {
   stock: number;
   description: string | null;
   imageUrl: string | null;
+  category: string | null;
 }
 
 export interface OrderItem {
@@ -55,6 +56,7 @@ export interface ProductCreateData {
   stock: number;
   description?: string;
   imageUrl?: string;
+  category?: string;
 }
 
 export interface ProductUpdateData {
@@ -63,6 +65,7 @@ export interface ProductUpdateData {
   stock?: number;
   description?: string | null;
   imageUrl?: string | null;
+  category?: string | null;
 }
 
 export interface InsufficientStockDetail {

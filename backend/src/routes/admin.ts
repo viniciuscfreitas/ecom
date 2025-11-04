@@ -110,7 +110,7 @@ router.get("/products/:id", authenticateAdmin, async (req, res) => {
 
 router.post("/products", authenticateAdmin, async (req, res) => {
   try {
-    const { name, price, stock, description, imageUrl } = req.body;
+    const { name, price, stock, description, imageUrl, category } = req.body;
 
     if (!name || price === undefined || stock === undefined) {
       return res.status(400).json({ error: "Name, price and stock are required" });
@@ -131,6 +131,7 @@ router.post("/products", authenticateAdmin, async (req, res) => {
         stock: Number(stock),
         description: description || null,
         imageUrl: imageUrl || null,
+        category: category || null,
       },
     });
 
@@ -143,7 +144,7 @@ router.post("/products", authenticateAdmin, async (req, res) => {
 
 router.patch("/products/:id", authenticateAdmin, async (req, res) => {
   try {
-    const { name, price, stock, description, imageUrl } = req.body;
+    const { name, price, stock, description, imageUrl, category } = req.body;
 
     const updateData: ProductUpdateData = {};
 
@@ -162,6 +163,7 @@ router.patch("/products/:id", authenticateAdmin, async (req, res) => {
     }
     if (description !== undefined) updateData.description = description || null;
     if (imageUrl !== undefined) updateData.imageUrl = imageUrl || null;
+    if (category !== undefined) updateData.category = category || null;
 
     const product = await prisma.product.update({
       where: { id: req.params.id },

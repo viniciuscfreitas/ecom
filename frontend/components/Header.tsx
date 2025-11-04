@@ -52,25 +52,25 @@ export default function Header() {
           <div className="flex items-center gap-4">
             <nav className="hidden md:flex items-center gap-4">
               <Link
-                href="/"
+                href="/categoria/cachorro"
                 className="text-muted-foreground hover:text-primary transition-colors font-medium"
               >
                 Cachorro
               </Link>
               <Link
-                href="/"
+                href="/categoria/gato"
                 className="text-muted-foreground hover:text-primary transition-colors font-medium"
               >
                 Gato
               </Link>
               <Link
-                href="/"
+                href="/categoria/aves"
                 className="text-muted-foreground hover:text-primary transition-colors font-medium"
               >
                 Aves
               </Link>
               <Link
-                href="/"
+                href="/categoria/farmacia"
                 className="text-muted-foreground hover:text-primary transition-colors font-medium"
               >
                 Farmácia

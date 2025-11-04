@@ -5,7 +5,10 @@ const router = Router();
 
 router.get("/", async (req, res) => {
   try {
+    const category = req.query.category as string | undefined;
+    
     const products = await prisma.product.findMany({
+      where: category ? { category } : undefined,
       orderBy: { createdAt: "desc" },
     });
     res.json(products);

@@ -6,6 +6,7 @@ export interface ProductUpdateData {
   stock?: number;
   description?: string | null;
   imageUrl?: string | null;
+  category?: string | null;
 }
 
 export interface WebhookData {
