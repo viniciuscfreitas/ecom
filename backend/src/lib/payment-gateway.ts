@@ -1,5 +1,5 @@
 import AbacatePay from 'abacatepay-nodejs-sdk';
-import crypto from 'crypto';
+import crypto, { randomUUID } from 'crypto';
 
 export interface PaymentResult {
   id: string;
@@ -7,6 +7,12 @@ export interface PaymentResult {
   qrCode?: string;
   pixKey?: string;
 }
+
+const shouldUseMock = () => {
+  const useMock = process.env.USE_MOCK_PAYMENT === 'true';
+  const hasApiKey = !!process.env.ABACATEPAY_API_KEY;
+  return useMock || !hasApiKey;
+};
 
 const getAbacateClient = () => {
   const apiKey = process.env.ABACATEPAY_API_KEY;
@@ -32,6 +38,19 @@ export async function createPayment(
   value: number,
   description: string
 ): Promise<PaymentResult> {
+  if (shouldUseMock()) {
+    const paymentId = randomUUID();
+    const qrCodeBase64 = Buffer.from('MOCK_QR_CODE_BASE64').toString('base64');
+    const pixKey = `00020126330014BR.GOV.BCB.PIX0114${paymentId.slice(0, 14)}5204000053039865802BR5913MOCK PAYMENT6009SAO PAULO62070503***6304`;
+    
+    return {
+      id: paymentId,
+      status: 'pending',
+      qrCode: `data:image/png;base64,${qrCodeBase64}`,
+      pixKey: pixKey
+    };
+  }
+
   const abacate = getAbacateClient();
 
   // Valor deve ser em centavos
@@ -65,6 +84,18 @@ export async function createPayment(
 export async function getPayment(
   paymentId: string
 ): Promise<PaymentResult> {
+  if (shouldUseMock()) {
+    const qrCodeBase64 = Buffer.from('MOCK_QR_CODE_BASE64').toString('base64');
+    const pixKey = `00020126330014BR.GOV.BCB.PIX0114${paymentId.slice(0, 14)}5204000053039865802BR5913MOCK PAYMENT6009SAO PAULO62070503***6304`;
+    
+    return {
+      id: paymentId,
+      status: 'pending',
+      qrCode: `data:image/png;base64,${qrCodeBase64}`,
+      pixKey: pixKey
+    };
+  }
+
   const abacate = getAbacateClient();
 
   const response = await abacate.pixQrCode.check({ id: paymentId });

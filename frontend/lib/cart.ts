@@ -37,12 +37,13 @@ export function updateCartItem(productId: string, quantity: number): void {
 
   if (item) {
     if (quantity <= 0) {
-      removeFromCart(productId);
+      const filteredCart = cart.filter((item) => item.productId !== productId);
+      localStorage.setItem("cart", JSON.stringify(filteredCart));
     } else {
       item.quantity = quantity;
       localStorage.setItem("cart", JSON.stringify(cart));
-      window.dispatchEvent(new Event("cartUpdated"));
     }
+    window.dispatchEvent(new Event("cartUpdated"));
   }
 }
 
