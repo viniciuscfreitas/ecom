@@ -6,7 +6,6 @@ import adminApi from "@/lib/admin-api";
 import { useAdminAuth } from "@/lib/useAdminAuth";
 import type { Order } from "@/lib/types";
 import { ORDER_STATUS_LABELS } from "@/lib/constants";
-import { calculateOrderSubtotal } from "@/lib/utils";
 
 const statusOrder = ["PENDENTE", "PREPARANDO", "SAIU_PARA_ENTREGA", "ENTREGUE"];
 
@@ -79,7 +78,10 @@ export default function AdminOrders() {
 
       <div className="space-y-4">
         {orders?.map((order) => {
-          const subtotal = calculateOrderSubtotal(order.items);
+          const subtotal = order.items.reduce(
+            (sum, item) => sum + Number(item.price) * item.quantity,
+            0
+          );
           const shipping = order.shippingValue ? Number(order.shippingValue) : 0;
           const total = subtotal + shipping;
           const canUpdateStatus = order.status !== "ENTREGUE";

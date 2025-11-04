@@ -6,7 +6,6 @@ import Link from "next/link";
 import api from "@/lib/api";
 import type { Order } from "@/lib/types";
 import { ORDER_STATUS_LABELS, PAYMENT_STATUS_LABELS } from "@/lib/constants";
-import { calculateOrderTotal } from "@/lib/utils";
 
 export default function OrderConfirmation() {
   const params = useParams();
@@ -39,7 +38,10 @@ export default function OrderConfirmation() {
     );
   }
 
-  const total = calculateOrderTotal(order);
+  const total = order.items.reduce(
+    (sum, item) => sum + Number(item.price) * item.quantity,
+    0
+  );
 
   return (
     <div className="container mx-auto px-4 py-8 max-w-2xl">

@@ -2,14 +2,7 @@
 
 import Link from "next/link";
 import { addToCart } from "@/lib/cart";
-
-interface Product {
-  id: string;
-  name: string;
-  price: number;
-  stock: number;
-  description: string | null;
-}
+import type { Product } from "@/lib/types";
 
 interface ProductCardProps {
   product: Product;
