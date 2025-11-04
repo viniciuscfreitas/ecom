@@ -1,7 +1,6 @@
 import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
-import { execSync } from "child_process";
 import { prisma } from "./lib/prisma";
 import productsRoutes from "./routes/products";
 import ordersRoutes from "./routes/orders";
@@ -13,7 +12,11 @@ dotenv.config();
 
 const app = express();
 
-app.use(cors());
+const allowedOrigins = process.env.ALLOWED_ORIGINS?.split(",") || ["http://localhost:3000"];
+app.use(cors({
+  origin: allowedOrigins,
+  credentials: true,
+}));
 
 const webhookMiddleware = express.raw({ type: 'application/json' });
 app.use("/api/webhooks/abacatepay", webhookMiddleware);
@@ -36,10 +39,6 @@ async function startServer() {
     console.log("Connecting to database...");
     await prisma.$connect();
     console.log("Database connected successfully");
-
-    console.log("Running migrations...");
-    execSync("npx prisma migrate deploy", { stdio: "inherit" });
-    console.log("Migrations completed successfully");
 
     app.listen(PORT, () => {
       console.log(`Server running on port ${PORT}`);

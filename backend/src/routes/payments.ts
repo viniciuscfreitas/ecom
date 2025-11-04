@@ -1,7 +1,10 @@
 import { Router } from "express";
 import { OrderStatus } from "@prisma/client";
-import { createPayment, getPayment, processWebhook } from "../lib/payment-gateway";
+import { createPayment, getPayment, processWebhook, isMockPayment } from "../lib/payment-gateway";
 import { prisma } from "../lib/prisma";
+
+const PAYMENT_STATUSES = ['pending', 'paid', 'expired'] as const;
+type PaymentStatus = typeof PAYMENT_STATUSES[number];
 
 const router = Router();
 
@@ -45,15 +48,13 @@ router.post("/orders/:id/payment", async (req, res) => {
         paymentStatus: payment.status,
       },
     });
-
-    const isMock = process.env.USE_MOCK_PAYMENT === 'true' || !process.env.ABACATEPAY_API_KEY;
     
     res.json({
       id: payment.id,
       status: payment.status,
       qrCode: payment.qrCode,
       pixKey: payment.pixKey,
-      isMock: isMock,
+      isMock: isMockPayment(),
     });
   } catch (error) {
     console.error("Error creating payment:", error);
@@ -87,15 +88,13 @@ router.get("/orders/:id/payment", async (req, res) => {
         },
       });
     }
-
-    const isMock = process.env.USE_MOCK_PAYMENT === 'true' || !process.env.ABACATEPAY_API_KEY;
     
     res.json({
       id: payment.id,
       status: payment.status,
       qrCode: payment.qrCode,
       pixKey: payment.pixKey,
-      isMock: isMock,
+      isMock: isMockPayment(),
     });
   } catch (error) {
     console.error("Error fetching payment:", error);
@@ -108,7 +107,7 @@ router.post("/orders/:id/payment/simulate", async (req, res) => {
     const orderId = req.params.id;
     const { status } = req.body;
 
-    if (!['pending', 'paid', 'expired'].includes(status)) {
+    if (!PAYMENT_STATUSES.includes(status as PaymentStatus)) {
       return res.status(400).json({ error: "Invalid status" });
     }
 
@@ -153,7 +152,8 @@ router.post("/webhooks/abacatepay", async (req, res) => {
     });
 
     if (!order) {
-      return res.status(404).json({ error: "Order not found for payment" });
+      console.error(`Webhook: Order not found for payment ${result.paymentId}`, { event, data });
+      return res.status(200).json({ success: false, error: "Order not found for payment" });
     }
 
     if (result.status === "paid") {
@@ -164,12 +164,17 @@ router.post("/webhooks/abacatepay", async (req, res) => {
           status: OrderStatus.PREPARANDO,
         },
       });
+      console.log(`Webhook: Order ${order.id} marked as paid`);
     }
 
-    res.json({ success: true });
+    res.status(200).json({ success: true });
   } catch (error) {
-    console.error("Error processing webhook:", error);
-    res.status(500).json({ error: "Failed to process webhook" });
+    console.error("Error processing webhook:", {
+      error: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined,
+      body: req.body?.toString?.()?.substring(0, 500),
+    });
+    res.status(200).json({ success: false, error: "Failed to process webhook" });
   }
 });
 

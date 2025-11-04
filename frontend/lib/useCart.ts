@@ -1,39 +1,46 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { getCart } from "./cart";
+import { getCart, addToCart, removeFromCart, updateCartItem, type CartItem } from "./cart";
 
 export function useCart() {
-  const [itemCount, setItemCount] = useState(0);
+  const [items, setItems] = useState<CartItem[]>([]);
 
-  const updateCount = () => {
-    const cart = getCart();
-    const count = cart.reduce((sum, item) => sum + item.quantity, 0);
-    setItemCount(count);
+  const updateCart = () => {
+    setItems(getCart());
   };
 
   useEffect(() => {
-    updateCount();
-
-    const handleStorageChange = (e: StorageEvent) => {
-      if (e.key === "cart") {
-        updateCount();
-      }
-    };
+    updateCart();
 
     const handleCartUpdated = () => {
-      updateCount();
+      updateCart();
     };
 
-    window.addEventListener("storage", handleStorageChange);
     window.addEventListener("cartUpdated", handleCartUpdated);
 
     return () => {
-      window.removeEventListener("storage", handleStorageChange);
       window.removeEventListener("cartUpdated", handleCartUpdated);
     };
   }, []);
 
-  return itemCount;
+  const count = items.reduce((sum, item) => sum + item.quantity, 0);
+
+  return {
+    items,
+    count,
+    add: (item: CartItem) => {
+      addToCart(item);
+      updateCart();
+    },
+    remove: (productId: string) => {
+      removeFromCart(productId);
+      updateCart();
+    },
+    update: (productId: string, quantity: number) => {
+      updateCartItem(productId, quantity);
+      updateCart();
+    },
+  };
 }
 

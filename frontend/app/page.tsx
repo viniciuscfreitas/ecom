@@ -3,15 +3,7 @@
 import { useQuery } from "@tanstack/react-query";
 import api from "@/lib/api";
 import ProductCard from "@/components/ProductCard";
-
-interface Product {
-  id: string;
-  name: string;
-  price: number;
-  stock: number;
-  description: string | null;
-  imageUrl: string | null;
-}
+import type { Product } from "@/lib/types";
 
 export default function Home() {
   const { data: products, isLoading } = useQuery<Product[]>({

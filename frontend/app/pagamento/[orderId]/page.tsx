@@ -5,14 +5,8 @@ import { useParams, useRouter } from "next/navigation";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import api from "@/lib/api";
 import { clearCart } from "@/lib/cart";
-
-interface PaymentData {
-  id: string;
-  status: string;
-  qrCode?: string;
-  pixKey?: string;
-  isMock?: boolean;
-}
+import type { PaymentData } from "@/lib/types";
+import { PAYMENT_STATUS_LABELS } from "@/lib/constants";
 
 export default function PaymentPage() {
   const params = useParams();
@@ -47,14 +41,17 @@ export default function PaymentPage() {
       return response.data;
     },
     enabled: paymentCreated,
+    refetchInterval: (query) => {
+      const data = query.state.data;
+      return data?.status === "pending" ? 5000 : false;
+    },
   });
 
   useEffect(() => {
     if (!paymentCreated && orderId) {
       createPaymentMutation.mutate();
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [orderId]);
+  }, [orderId, paymentCreated, createPaymentMutation]);
 
   useEffect(() => {
     if (payment?.status === "paid") {
@@ -100,19 +97,13 @@ export default function PaymentPage() {
     );
   }
 
-  const statusLabels: Record<string, string> = {
-    pending: "Aguardando Pagamento",
-    paid: "Pagamento Confirmado",
-    expired: "Pagamento Expirado",
-  };
-
   return (
     <div className="container mx-auto px-4 py-8 max-w-2xl">
       <h1 className="text-3xl font-bold mb-8">Pagamento PIX</h1>
 
       <div className="mb-6">
         <p className="text-lg font-semibold mb-2">
-          Status: {statusLabels[payment.status] || payment.status}
+          Status: {PAYMENT_STATUS_LABELS[payment.status] || payment.status}
         </p>
       </div>
 

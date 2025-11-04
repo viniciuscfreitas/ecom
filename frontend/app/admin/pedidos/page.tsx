@@ -1,91 +1,32 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import api from "@/lib/api";
-
-interface OrderItem {
-  id: string;
-  quantity: number;
-  price: number;
-  product: {
-    id: string;
-    name: string;
-  };
-}
-
-interface Address {
-  street: string;
-  number: string;
-  complement: string | null;
-  neighborhood: string;
-  city: string;
-  zipCode: string;
-}
-
-interface Order {
-  id: string;
-  customerName: string;
-  customerEmail: string;
-  customerPhone: string;
-  status: string;
-  paymentId?: string;
-  paymentStatus?: string;
-  shippingValue?: number;
-  deliveryTime?: string;
-  items: OrderItem[];
-  address: Address | null;
-  createdAt: string;
-}
-
-const statusLabels: Record<string, string> = {
-  PENDENTE: "Pendente",
-  PREPARANDO: "Preparando",
-  SAIU_PARA_ENTREGA: "Saiu para entrega",
-  ENTREGUE: "Entregue",
-};
+import adminApi from "@/lib/admin-api";
+import { useAdminAuth } from "@/lib/useAdminAuth";
+import type { Order } from "@/lib/types";
+import { ORDER_STATUS_LABELS } from "@/lib/constants";
+import { calculateOrderSubtotal } from "@/lib/utils";
 
 const statusOrder = ["PENDENTE", "PREPARANDO", "SAIU_PARA_ENTREGA", "ENTREGUE"];
 
 export default function AdminOrders() {
   const router = useRouter();
   const queryClient = useQueryClient();
-  const [token, setToken] = useState<string | null>(null);
-
-  useEffect(() => {
-    const storedToken = localStorage.getItem("adminToken");
-    if (!storedToken) {
-      router.push("/admin/login");
-    } else {
-      setToken(storedToken);
-    }
-  }, [router]);
+  const { isAuthenticated } = useAdminAuth();
 
   const { data: orders, isLoading } = useQuery<Order[]>({
     queryKey: ["admin-orders"],
     queryFn: async () => {
-      const response = await api.get("/admin/orders", {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
+      const response = await adminApi.get("/admin/orders");
       return response.data;
     },
-    enabled: !!token,
+    enabled: isAuthenticated,
   });
 
   const updateStatusMutation = useMutation({
     mutationFn: async ({ orderId, status }: { orderId: string; status: string }) => {
-      const response = await api.patch(
-        `/admin/orders/${orderId}/status`,
-        { status },
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
+      const response = await adminApi.patch(`/admin/orders/${orderId}/status`, { status });
       return response.data;
     },
     onSuccess: () => {
@@ -101,7 +42,7 @@ export default function AdminOrders() {
     }
   };
 
-  if (!token) {
+  if (!isAuthenticated) {
     return null;
   }
 
@@ -117,23 +58,28 @@ export default function AdminOrders() {
     <div className="container mx-auto px-4 py-8">
       <div className="flex justify-between items-center mb-8">
         <h1 className="text-3xl font-bold">Pedidos</h1>
-        <button
-          onClick={() => {
-            localStorage.removeItem("adminToken");
-            router.push("/admin/login");
-          }}
-          className="text-red-600 hover:text-red-800"
-        >
-          Sair
-        </button>
+        <div className="flex gap-4">
+          <button
+            onClick={() => router.push("/admin/produtos")}
+            className="text-blue-600 hover:text-blue-800"
+          >
+            Produtos
+          </button>
+          <button
+            onClick={() => {
+              localStorage.removeItem("adminToken");
+              router.push("/admin/login");
+            }}
+            className="text-red-600 hover:text-red-800"
+          >
+            Sair
+          </button>
+        </div>
       </div>
 
       <div className="space-y-4">
         {orders?.map((order) => {
-          const subtotal = order.items.reduce(
-            (sum, item) => sum + Number(item.price) * item.quantity,
-            0
-          );
+          const subtotal = calculateOrderSubtotal(order.items);
           const shipping = order.shippingValue ? Number(order.shippingValue) : 0;
           const total = subtotal + shipping;
           const canUpdateStatus = order.status !== "ENTREGUE";
@@ -148,7 +94,7 @@ export default function AdminOrders() {
                   <p className="text-sm text-gray-600">{order.customerPhone}</p>
                 </div>
                 <div className="text-right">
-                  <p className="font-semibold">Status: {statusLabels[order.status] || order.status}</p>
+                  <p className="font-semibold">Status: {ORDER_STATUS_LABELS[order.status] || order.status}</p>
                   {order.paymentStatus && (
                     <p className="text-sm font-semibold">
                       Pagamento: {order.paymentStatus === "paid" ? "✅ Pago" : order.paymentStatus === "pending" ? "⏳ Pendente" : "❌ Expirado"}
@@ -206,7 +152,7 @@ export default function AdminOrders() {
                   {updateStatusMutation.isPending
                     ? "Atualizando..."
                     : `Atualizar para: ${
-                        statusLabels[
+                        ORDER_STATUS_LABELS[
                           statusOrder[statusOrder.indexOf(order.status) + 1]
                         ]
                       }`}

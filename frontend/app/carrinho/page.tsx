@@ -1,25 +1,11 @@
 "use client";
 
-import { useState, useEffect } from "react";
 import Link from "next/link";
-import { getCart, removeFromCart, updateCartItem, calculateTotal, CartItem } from "@/lib/cart";
+import { useCart } from "@/lib/useCart";
+import { calculateTotal } from "@/lib/cart";
 
 export default function Cart() {
-  const [cart, setCart] = useState<CartItem[]>([]);
-
-  useEffect(() => {
-    setCart(getCart());
-  }, []);
-
-  const handleRemove = (productId: string) => {
-    removeFromCart(productId);
-    setCart(getCart());
-  };
-
-  const handleUpdateQuantity = (productId: string, quantity: number) => {
-    updateCartItem(productId, quantity);
-    setCart(getCart());
-  };
+  const { items: cart, remove, update } = useCart();
 
   const total = calculateTotal(cart);
 
@@ -48,14 +34,14 @@ export default function Cart() {
             <div className="flex items-center gap-4">
               <div className="flex items-center gap-2">
                 <button
-                  onClick={() => handleUpdateQuantity(item.productId, item.quantity - 1)}
+                  onClick={() => update(item.productId, item.quantity - 1)}
                   className="bg-gray-200 px-3 py-1 rounded"
                 >
                   -
                 </button>
                 <span>{item.quantity}</span>
                 <button
-                  onClick={() => handleUpdateQuantity(item.productId, item.quantity + 1)}
+                  onClick={() => update(item.productId, item.quantity + 1)}
                   className="bg-gray-200 px-3 py-1 rounded"
                 >
                   +
@@ -65,7 +51,7 @@ export default function Cart() {
                 R$ {(item.price * item.quantity).toFixed(2)}
               </p>
               <button
-                onClick={() => handleRemove(item.productId)}
+                onClick={() => remove(item.productId)}
                 className="text-red-600 hover:text-red-800"
               >
                 Remover

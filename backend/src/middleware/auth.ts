@@ -12,8 +12,14 @@ export const authenticateAdmin = (req: Request, res: Response, next: NextFunctio
     return res.status(401).json({ error: "Unauthorized" });
   }
 
+  const jwtSecret = process.env.JWT_SECRET;
+  if (!jwtSecret) {
+    console.error("JWT_SECRET environment variable is not defined");
+    return res.status(500).json({ error: "Server configuration error" });
+  }
+
   try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || "secret") as JwtPayload;
+    const decoded = jwt.verify(token, jwtSecret) as JwtPayload;
     (req as any).adminId = decoded.adminId;
     next();
   } catch (error) {

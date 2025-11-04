@@ -1,13 +1,14 @@
 "use client";
 
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { getCart, clearCart, CartItem } from "@/lib/cart";
+import { useCart } from "@/lib/useCart";
+import { clearCart } from "@/lib/cart";
 import api from "@/lib/api";
 
 export default function Checkout() {
   const router = useRouter();
-  const [cart] = useState<CartItem[]>(getCart());
+  const { items: cart } = useCart();
   const [loading, setLoading] = useState(false);
   const [shippingValue, setShippingValue] = useState<number | null>(null);
   const [loadingShipping, setLoadingShipping] = useState(false);
@@ -52,9 +53,18 @@ export default function Checkout() {
 
       const response = await api.post("/orders", orderData);
       router.push(`/pagamento/${response.data.id}`);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error creating order:", error);
-      alert("Erro ao criar pedido. Tente novamente.");
+      
+      if (error.response?.status === 400 && error.response?.data?.error === "Insufficient stock") {
+        const details = error.response.data.details || [];
+        const productsList = details.map((d: any) => 
+          `- ${d.productName}: disponível ${d.available}, solicitado ${d.requested}`
+        ).join("\n");
+        alert(`Estoque insuficiente para alguns produtos:\n\n${productsList}\n\nPor favor, ajuste as quantidades e tente novamente.`);
+      } else {
+        alert("Erro ao criar pedido. Tente novamente.");
+      }
     } finally {
       setLoading(false);
     }
@@ -67,42 +77,28 @@ export default function Checkout() {
     });
   };
 
-  const calculateShipping = useCallback(async (zipCode: string) => {
-    if (!zipCode || zipCode.length < 8) {
-      setShippingValue(null);
-      return;
-    }
-
-    setLoadingShipping(true);
-    try {
-      const response = await api.get(`/shipping/calculate?zipCode=${zipCode}`);
-      setShippingValue(response.data.value);
-    } catch (error) {
-      console.error("Error calculating shipping:", error);
-      setShippingValue(null);
-    } finally {
-      setLoadingShipping(false);
-    }
-  }, []);
-
   useEffect(() => {
     if (formData.zipCode && formData.zipCode.length >= 8) {
-      const timeoutId = setTimeout(() => {
-        calculateShipping(formData.zipCode);
+      const timeoutId = setTimeout(async () => {
+        setLoadingShipping(true);
+        try {
+          const response = await api.get(`/shipping/calculate?zipCode=${formData.zipCode}`);
+          setShippingValue(response.data.value);
+        } catch (error) {
+          console.error("Error calculating shipping:", error);
+          setShippingValue(null);
+        } finally {
+          setLoadingShipping(false);
+        }
       }, 500);
       return () => clearTimeout(timeoutId);
     } else {
       setShippingValue(null);
     }
-  }, [formData.zipCode, calculateShipping]);
+  }, [formData.zipCode]);
 
-  const subtotal = useMemo(() => {
-    return cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
-  }, [cart]);
-
-  const total = useMemo(() => {
-    return subtotal + (shippingValue || 0);
-  }, [subtotal, shippingValue]);
+  const subtotal = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
+  const total = subtotal + (shippingValue || 0);
 
   if (cart.length === 0) {
     return (

@@ -4,38 +4,9 @@ import { useQuery } from "@tanstack/react-query";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import api from "@/lib/api";
-
-interface OrderItem {
-  id: string;
-  quantity: number;
-  price: number;
-  product: {
-    id: string;
-    name: string;
-  };
-}
-
-interface Address {
-  street: string;
-  number: string;
-  complement: string | null;
-  neighborhood: string;
-  city: string;
-  zipCode: string;
-}
-
-interface Order {
-  id: string;
-  customerName: string;
-  customerEmail: string;
-  customerPhone: string;
-  status: string;
-  paymentId?: string;
-  paymentStatus?: string;
-  items: OrderItem[];
-  address: Address;
-  createdAt: string;
-}
+import type { Order } from "@/lib/types";
+import { ORDER_STATUS_LABELS, PAYMENT_STATUS_LABELS } from "@/lib/constants";
+import { calculateOrderTotal } from "@/lib/utils";
 
 export default function OrderConfirmation() {
   const params = useParams();
@@ -68,33 +39,17 @@ export default function OrderConfirmation() {
     );
   }
 
-  const total = order.items.reduce(
-    (sum, item) => sum + Number(item.price) * item.quantity,
-    0
-  );
-
-  const statusLabels: Record<string, string> = {
-    PENDENTE: "Pendente",
-    PREPARANDO: "Preparando",
-    SAIU_PARA_ENTREGA: "Saiu para entrega",
-    ENTREGUE: "Entregue",
-  };
-
-  const paymentStatusLabels: Record<string, string> = {
-    pending: "Aguardando Pagamento",
-    paid: "Pagamento Confirmado",
-    expired: "Pagamento Expirado",
-  };
+  const total = calculateOrderTotal(order);
 
   return (
     <div className="container mx-auto px-4 py-8 max-w-2xl">
       <h1 className="text-3xl font-bold mb-8">Pedido Confirmado!</h1>
       <div className="bg-green-50 border border-green-200 rounded-lg p-6 mb-6">
         <p className="text-lg font-semibold mb-2">Pedido #{order.id.slice(0, 8)}</p>
-        <p className="text-gray-600">Status: {statusLabels[order.status] || order.status}</p>
+        <p className="text-gray-600">Status: {ORDER_STATUS_LABELS[order.status] || order.status}</p>
         {order.paymentStatus && (
           <p className="text-gray-600 mt-2">
-            Pagamento: {paymentStatusLabels[order.paymentStatus] || order.paymentStatus}
+            Pagamento: {PAYMENT_STATUS_LABELS[order.paymentStatus] || order.paymentStatus}
           </p>
         )}
       </div>
@@ -117,16 +72,18 @@ export default function OrderConfirmation() {
         </div>
       </div>
 
-      <div className="mb-6">
-        <h2 className="text-xl font-semibold mb-4">Endereço de Entrega</h2>
-        <p className="text-gray-600">
-          {order.address.street}, {order.address.number}
-          {order.address.complement && `, ${order.address.complement}`}
-        </p>
-        <p className="text-gray-600">
-          {order.address.neighborhood}, {order.address.city} - {order.address.zipCode}
-        </p>
-      </div>
+      {order.address && (
+        <div className="mb-6">
+          <h2 className="text-xl font-semibold mb-4">Endereço de Entrega</h2>
+          <p className="text-gray-600">
+            {order.address.street}, {order.address.number}
+            {order.address.complement && `, ${order.address.complement}`}
+          </p>
+          <p className="text-gray-600">
+            {order.address.neighborhood}, {order.address.city} - {order.address.zipCode}
+          </p>
+        </div>
+      )}
 
       <Link
         href="/"

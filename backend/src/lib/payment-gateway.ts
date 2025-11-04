@@ -1,5 +1,6 @@
 import AbacatePay from 'abacatepay-nodejs-sdk';
-import crypto, { randomUUID } from 'crypto';
+import { randomUUID } from 'crypto';
+import crypto from 'crypto';
 
 export interface PaymentResult {
   id: string;
@@ -8,30 +9,10 @@ export interface PaymentResult {
   pixKey?: string;
 }
 
-const shouldUseMock = () => {
+export const isMockPayment = () => {
   const useMock = process.env.USE_MOCK_PAYMENT === 'true';
   const hasApiKey = !!process.env.ABACATEPAY_API_KEY;
   return useMock || !hasApiKey;
-};
-
-const getMockPaymentStatus = (paymentId: string): string => {
-  const forcedStatus = process.env.MOCK_PAYMENT_STATUS;
-  if (forcedStatus && ['pending', 'paid', 'expired'].includes(forcedStatus)) {
-    return forcedStatus;
-  }
-
-  const lastChar = paymentId.slice(-1).toLowerCase();
-  if (['0', '1', '2', '3', '4', '5', '6'].includes(lastChar)) {
-    return 'pending';
-  }
-  if (['7', '8'].includes(lastChar)) {
-    return 'paid';
-  }
-  if (lastChar === '9' || ['a', 'b', 'c', 'd', 'e', 'f'].includes(lastChar)) {
-    return 'expired';
-  }
-
-  return 'pending';
 };
 
 const getAbacateClient = () => {
@@ -42,7 +23,6 @@ const getAbacateClient = () => {
   return AbacatePay(apiKey);
 };
 
-// Mapeia status do AbacatePay para formato interno
 const mapStatus = (status: string): string => {
   const statusMap: Record<string, string> = {
     'PENDING': 'pending',
@@ -51,34 +31,26 @@ const mapStatus = (status: string): string => {
     'CANCELLED': 'expired',
     'REFUNDED': 'paid'
   };
-  return statusMap[status] || status.toLowerCase();
+  return statusMap[status] || 'pending';
 };
 
 export async function createPayment(
   value: number,
   description: string
 ): Promise<PaymentResult> {
-  const useMock = shouldUseMock();
-  console.log('Payment Gateway - useMock:', useMock, 'hasApiKey:', !!process.env.ABACATEPAY_API_KEY);
-  
-  if (useMock) {
-    console.log('Using MOCK payment gateway');
+  if (isMockPayment()) {
     const paymentId = randomUUID();
-    const status = getMockPaymentStatus(paymentId);
     const qrCodeBase64 = Buffer.from('MOCK_QR_CODE_BASE64').toString('base64');
     const pixKey = `00020126330014BR.GOV.BCB.PIX0114${paymentId.slice(0, 14)}5204000053039865802BR5913MOCK PAYMENT6009SAO PAULO62070503***6304`;
     
-    console.log(`Mock payment created: ${paymentId}, status: ${status}`);
-    
     return {
       id: paymentId,
-      status: status,
+      status: 'pending',
       qrCode: `data:image/png;base64,${qrCodeBase64}`,
       pixKey: pixKey
     };
   }
 
-  console.log('Using REAL AbacatePay SDK');
   const abacate = getAbacateClient();
 
   // Valor deve ser em centavos
@@ -112,18 +84,15 @@ export async function createPayment(
 export async function getPayment(
   paymentId: string
 ): Promise<PaymentResult> {
-  if (shouldUseMock()) {
-    const status = getMockPaymentStatus(paymentId);
+  if (isMockPayment()) {
     const qrCodeBase64 = Buffer.from('MOCK_QR_CODE_BASE64').toString('base64');
     const pixKey = `00020126330014BR.GOV.BCB.PIX0114${paymentId.slice(0, 14)}5204000053039865802BR5913MOCK PAYMENT6009SAO PAULO62070503***6304`;
     
-    console.log(`Mock payment get: ${paymentId}, status: ${status}`);
-    
     return {
       id: paymentId,
-      status: status,
-      qrCode: status === 'pending' ? `data:image/png;base64,${qrCodeBase64}` : undefined,
-      pixKey: status === 'pending' ? pixKey : undefined
+      status: 'pending',
+      qrCode: `data:image/png;base64,${qrCodeBase64}`,
+      pixKey: pixKey
     };
   }
 
