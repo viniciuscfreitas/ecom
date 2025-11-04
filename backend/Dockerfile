@@ -5,9 +5,14 @@ WORKDIR /app
 COPY package.json package-lock.json* ./
 RUN npm ci
 
+# Copiar schema do Prisma primeiro
+COPY prisma ./prisma
+
+# Gerar Prisma Client ANTES do build TypeScript
+RUN npx prisma generate
+
 COPY . .
 RUN npm run build
-RUN npx prisma generate
 
 FROM node:20-alpine AS runner
 

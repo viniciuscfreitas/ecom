@@ -29,7 +29,7 @@ router.post("/orders/:id/payment", async (req, res) => {
     }
 
     const total = order.items.reduce(
-      (sum, item) => sum + Number(item.price) * item.quantity,
+      (sum: number, item: { price: any; quantity: number }) => sum + Number(item.price) * item.quantity,
       0
     );
 
