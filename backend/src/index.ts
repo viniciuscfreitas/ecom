@@ -7,6 +7,7 @@ import productsRoutes from "./routes/products";
 import ordersRoutes from "./routes/orders";
 import adminRoutes from "./routes/admin";
 import paymentsRoutes from "./routes/payments";
+import shippingRoutes from "./routes/shipping";
 
 dotenv.config();
 
@@ -22,6 +23,7 @@ app.use("/api/products", productsRoutes);
 app.use("/api/orders", ordersRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api", paymentsRoutes);
+app.use("/api/shipping", shippingRoutes);
 
 app.get("/health", (req, res) => {
   res.json({ status: "ok" });

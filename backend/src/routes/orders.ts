@@ -6,7 +6,7 @@ const router = Router();
 
 router.post("/", async (req, res) => {
   try {
-    const { customerName, customerEmail, customerPhone, address, items } = req.body;
+    const { customerName, customerEmail, customerPhone, address, items, shippingValue, deliveryTime } = req.body;
 
     if (!customerName || !customerEmail || !customerPhone || !address || !items || items.length === 0) {
       return res.status(400).json({ error: "Missing required fields" });
@@ -18,6 +18,8 @@ router.post("/", async (req, res) => {
         customerEmail,
         customerPhone,
         status: OrderStatus.PENDENTE,
+        ...(shippingValue !== undefined && { shippingValue: Number(shippingValue) }),
+        ...(deliveryTime && { deliveryTime }),
         items: {
           create: items.map((item: { productId: string; quantity: number; price: number }) => ({
             productId: item.productId,

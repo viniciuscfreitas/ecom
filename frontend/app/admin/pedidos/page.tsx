@@ -32,6 +32,8 @@ interface Order {
   status: string;
   paymentId?: string;
   paymentStatus?: string;
+  shippingValue?: number;
+  deliveryTime?: string;
   items: OrderItem[];
   address: Address | null;
   createdAt: string;
@@ -128,10 +130,12 @@ export default function AdminOrders() {
 
       <div className="space-y-4">
         {orders?.map((order) => {
-          const total = order.items.reduce(
+          const subtotal = order.items.reduce(
             (sum, item) => sum + Number(item.price) * item.quantity,
             0
           );
+          const shipping = order.shippingValue ? Number(order.shippingValue) : 0;
+          const total = subtotal + shipping;
           const canUpdateStatus = order.status !== "ENTREGUE";
 
           return (
@@ -150,6 +154,11 @@ export default function AdminOrders() {
                       Pagamento: {order.paymentStatus === "paid" ? "✅ Pago" : order.paymentStatus === "pending" ? "⏳ Pendente" : "❌ Expirado"}
                     </p>
                   )}
+                  {order.deliveryTime && (
+                    <p className="text-sm text-gray-600">
+                      Horário: {order.deliveryTime === "MANHA" ? "Manhã (9h-12h)" : "Tarde (14h-18h)"}
+                    </p>
+                  )}
                   <p className="text-sm text-gray-600">
                     {new Date(order.createdAt).toLocaleDateString("pt-BR")}
                   </p>
@@ -166,7 +175,13 @@ export default function AdminOrders() {
                     </li>
                   ))}
                 </ul>
-                <p className="mt-2 font-semibold">Total: R$ {total.toFixed(2)}</p>
+                <div className="mt-2 space-y-1">
+                  <p className="text-sm">Subtotal: R$ {subtotal.toFixed(2)}</p>
+                  {shipping > 0 && (
+                    <p className="text-sm">Frete: R$ {shipping.toFixed(2)}</p>
+                  )}
+                  <p className="font-semibold">Total: R$ {total.toFixed(2)}</p>
+                </div>
               </div>
 
               {order.address && (
