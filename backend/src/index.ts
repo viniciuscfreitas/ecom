@@ -1,6 +1,7 @@
 import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
+import { execSync } from "child_process";
 import { prisma } from "./lib/prisma";
 import productsRoutes from "./routes/products";
 import ordersRoutes from "./routes/orders";
@@ -28,9 +29,27 @@ app.get("/health", (req, res) => {
 
 const PORT = process.env.PORT || 3001;
 
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-});
+async function startServer() {
+  try {
+    console.log("Connecting to database...");
+    await prisma.$connect();
+    console.log("Database connected successfully");
+
+    console.log("Running migrations...");
+    execSync("npx prisma migrate deploy", { stdio: "inherit" });
+    console.log("Migrations completed successfully");
+
+    app.listen(PORT, () => {
+      console.log(`Server running on port ${PORT}`);
+    });
+  } catch (error) {
+    console.error("Failed to start server:", error);
+    await prisma.$disconnect();
+    process.exit(1);
+  }
+}
+
+startServer();
 
 process.on("beforeExit", async () => {
   await prisma.$disconnect();

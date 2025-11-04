@@ -10,6 +10,7 @@ router.get("/", async (req, res) => {
     });
     res.json(products);
   } catch (error) {
+    console.error("Failed to fetch products:", error);
     res.status(500).json({ error: "Failed to fetch products" });
   }
 });
@@ -26,6 +27,7 @@ router.get("/:id", async (req, res) => {
 
     res.json(product);
   } catch (error) {
+    console.error("Failed to fetch product:", error);
     res.status(500).json({ error: "Failed to fetch product" });
   }
 });
