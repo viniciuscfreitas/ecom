@@ -28,7 +28,14 @@ router.post("/orders/:id/payment", async (req, res) => {
     }
 
     if (order.paymentId) {
-      return res.status(400).json({ error: "Payment already created for this order" });
+      const existingPayment = await getPayment(order.paymentId);
+      return res.json({
+        id: existingPayment.id,
+        status: existingPayment.status,
+        qrCode: existingPayment.qrCode,
+        pixKey: existingPayment.pixKey,
+        isMock: isMockPayment(),
+      });
     }
 
     const total = order.items.reduce(

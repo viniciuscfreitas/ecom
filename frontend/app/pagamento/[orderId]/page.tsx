@@ -13,6 +13,7 @@ export default function PaymentPage() {
   const router = useRouter();
   const orderId = params.orderId as string;
   const [paymentCreated, setPaymentCreated] = useState(false);
+  const [isCreating, setIsCreating] = useState(false);
 
   const createPaymentMutation = useMutation({
     mutationFn: async () => {
@@ -21,6 +22,10 @@ export default function PaymentPage() {
     },
     onSuccess: () => {
       setPaymentCreated(true);
+      setIsCreating(false);
+    },
+    onError: () => {
+      setIsCreating(false);
     },
   });
 
@@ -48,10 +53,12 @@ export default function PaymentPage() {
   });
 
   useEffect(() => {
-    if (!paymentCreated && orderId) {
+    if (!paymentCreated && !isCreating && orderId) {
+      setIsCreating(true);
       createPaymentMutation.mutate();
     }
-  }, [orderId, paymentCreated, createPaymentMutation]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [orderId, paymentCreated, isCreating]);
 
   useEffect(() => {
     if (payment?.status === "paid") {
@@ -80,7 +87,10 @@ export default function PaymentPage() {
             : "Erro ao criar pagamento. Tente novamente."}
         </p>
         <button
-          onClick={() => createPaymentMutation.mutate()}
+          onClick={() => {
+            setIsCreating(true);
+            createPaymentMutation.mutate();
+          }}
           className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
         >
           Tentar Novamente
@@ -211,6 +221,7 @@ export default function PaymentPage() {
             <button
               onClick={() => {
                 setPaymentCreated(false);
+                setIsCreating(true);
                 createPaymentMutation.mutate();
               }}
               className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
