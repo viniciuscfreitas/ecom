@@ -22,11 +22,13 @@ export function addToCart(item: CartItem): void {
   }
 
   localStorage.setItem("cart", JSON.stringify(cart));
+  window.dispatchEvent(new Event("cartUpdated"));
 }
 
 export function removeFromCart(productId: string): void {
   const cart = getCart().filter((item) => item.productId !== productId);
   localStorage.setItem("cart", JSON.stringify(cart));
+  window.dispatchEvent(new Event("cartUpdated"));
 }
 
 export function updateCartItem(productId: string, quantity: number): void {
@@ -39,12 +41,14 @@ export function updateCartItem(productId: string, quantity: number): void {
     } else {
       item.quantity = quantity;
       localStorage.setItem("cart", JSON.stringify(cart));
+      window.dispatchEvent(new Event("cartUpdated"));
     }
   }
 }
 
 export function clearCart(): void {
   localStorage.removeItem("cart");
+  window.dispatchEvent(new Event("cartUpdated"));
 }
 
 export function calculateTotal(cart: CartItem[]): number {

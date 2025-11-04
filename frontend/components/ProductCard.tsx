@@ -23,7 +23,6 @@ export default function ProductCard({ product }: ProductCardProps) {
       price: Number(product.price),
       name: product.name,
     });
-    alert("Produto adicionado ao carrinho!");
   };
 
   return (

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import { QueryClientProvider } from "@/lib/query-client";
+import Header from "@/components/Header";
 
 export const metadata: Metadata = {
   title: "Pet Shop E-commerce",
@@ -15,7 +16,10 @@ export default function RootLayout({
   return (
     <html lang="pt-BR">
       <body>
-        <QueryClientProvider>{children}</QueryClientProvider>
+        <QueryClientProvider>
+          <Header />
+          {children}
+        </QueryClientProvider>
       </body>
     </html>
   );
