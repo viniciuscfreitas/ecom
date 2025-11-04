@@ -11,6 +11,7 @@ interface PaymentData {
   status: string;
   qrCode?: string;
   pixKey?: string;
+  isMock?: boolean;
 }
 
 export default function PaymentPage() {
@@ -26,6 +27,16 @@ export default function PaymentPage() {
     },
     onSuccess: () => {
       setPaymentCreated(true);
+    },
+  });
+
+  const simulatePaymentMutation = useMutation({
+    mutationFn: async (status: string) => {
+      const response = await api.post(`/orders/${orderId}/payment/simulate`, { status });
+      return response.data;
+    },
+    onSuccess: () => {
+      refetchPayment();
     },
   });
 
@@ -158,6 +169,37 @@ export default function PaymentPage() {
           >
             Verificar Pagamento
           </button>
+
+          {payment.isMock && (
+            <div className="mt-6 p-4 bg-yellow-50 border border-yellow-200 rounded">
+              <p className="text-sm font-semibold text-yellow-800 mb-3">
+                Modo de Teste - Simular Pagamento
+              </p>
+              <div className="flex gap-2 flex-wrap">
+                <button
+                  onClick={() => simulatePaymentMutation.mutate('paid')}
+                  disabled={simulatePaymentMutation.isPending}
+                  className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 disabled:bg-gray-400"
+                >
+                  Simular Aprovado
+                </button>
+                <button
+                  onClick={() => simulatePaymentMutation.mutate('expired')}
+                  disabled={simulatePaymentMutation.isPending}
+                  className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700 disabled:bg-gray-400"
+                >
+                  Simular Expirado
+                </button>
+                <button
+                  onClick={() => simulatePaymentMutation.mutate('pending')}
+                  disabled={simulatePaymentMutation.isPending}
+                  className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 disabled:bg-gray-400"
+                >
+                  Voltar para Pendente
+                </button>
+              </div>
+            </div>
+          )}
         </>
       )}
 
@@ -174,15 +216,26 @@ export default function PaymentPage() {
           <p className="text-lg font-semibold text-red-800 mb-4">
             Pagamento expirado
           </p>
-          <button
-            onClick={() => {
-              setPaymentCreated(false);
-              createPaymentMutation.mutate();
-            }}
-            className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
-          >
-            Gerar Novo Pagamento
-          </button>
+          <div className="flex gap-2">
+            <button
+              onClick={() => {
+                setPaymentCreated(false);
+                createPaymentMutation.mutate();
+              }}
+              className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+            >
+              Gerar Novo Pagamento
+            </button>
+            {payment.isMock && (
+              <button
+                onClick={() => simulatePaymentMutation.mutate('paid')}
+                disabled={simulatePaymentMutation.isPending}
+                className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 disabled:bg-gray-400"
+              >
+                Simular Aprovado
+              </button>
+            )}
+          </div>
         </div>
       )}
     </div>

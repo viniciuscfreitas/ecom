@@ -46,11 +46,14 @@ router.post("/orders/:id/payment", async (req, res) => {
       },
     });
 
+    const isMock = process.env.USE_MOCK_PAYMENT === 'true' || !process.env.ABACATEPAY_API_KEY;
+    
     res.json({
       id: payment.id,
       status: payment.status,
       qrCode: payment.qrCode,
       pixKey: payment.pixKey,
+      isMock: isMock,
     });
   } catch (error) {
     console.error("Error creating payment:", error);
@@ -85,15 +88,54 @@ router.get("/orders/:id/payment", async (req, res) => {
       });
     }
 
+    const isMock = process.env.USE_MOCK_PAYMENT === 'true' || !process.env.ABACATEPAY_API_KEY;
+    
     res.json({
       id: payment.id,
       status: payment.status,
       qrCode: payment.qrCode,
       pixKey: payment.pixKey,
+      isMock: isMock,
     });
   } catch (error) {
     console.error("Error fetching payment:", error);
     res.status(500).json({ error: "Failed to fetch payment" });
+  }
+});
+
+router.post("/orders/:id/payment/simulate", async (req, res) => {
+  try {
+    const orderId = req.params.id;
+    const { status } = req.body;
+
+    if (!['pending', 'paid', 'expired'].includes(status)) {
+      return res.status(400).json({ error: "Invalid status" });
+    }
+
+    const order = await prisma.order.findUnique({
+      where: { id: orderId },
+    });
+
+    if (!order) {
+      return res.status(404).json({ error: "Order not found" });
+    }
+
+    if (!order.paymentId) {
+      return res.status(404).json({ error: "Payment not found for this order" });
+    }
+
+    await prisma.order.update({
+      where: { id: orderId },
+      data: {
+        paymentStatus: status,
+        ...(status === 'paid' && { status: OrderStatus.PREPARANDO }),
+      },
+    });
+
+    res.json({ success: true, status });
+  } catch (error) {
+    console.error("Error simulating payment:", error);
+    res.status(500).json({ error: "Failed to simulate payment" });
   }
 });
 

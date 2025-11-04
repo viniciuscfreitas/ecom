@@ -14,6 +14,26 @@ const shouldUseMock = () => {
   return useMock || !hasApiKey;
 };
 
+const getMockPaymentStatus = (paymentId: string): string => {
+  const forcedStatus = process.env.MOCK_PAYMENT_STATUS;
+  if (forcedStatus && ['pending', 'paid', 'expired'].includes(forcedStatus)) {
+    return forcedStatus;
+  }
+
+  const lastChar = paymentId.slice(-1).toLowerCase();
+  if (['0', '1', '2', '3', '4', '5', '6'].includes(lastChar)) {
+    return 'pending';
+  }
+  if (['7', '8'].includes(lastChar)) {
+    return 'paid';
+  }
+  if (lastChar === '9' || ['a', 'b', 'c', 'd', 'e', 'f'].includes(lastChar)) {
+    return 'expired';
+  }
+
+  return 'pending';
+};
+
 const getAbacateClient = () => {
   const apiKey = process.env.ABACATEPAY_API_KEY;
   if (!apiKey) {
@@ -44,12 +64,15 @@ export async function createPayment(
   if (useMock) {
     console.log('Using MOCK payment gateway');
     const paymentId = randomUUID();
+    const status = getMockPaymentStatus(paymentId);
     const qrCodeBase64 = Buffer.from('MOCK_QR_CODE_BASE64').toString('base64');
     const pixKey = `00020126330014BR.GOV.BCB.PIX0114${paymentId.slice(0, 14)}5204000053039865802BR5913MOCK PAYMENT6009SAO PAULO62070503***6304`;
     
+    console.log(`Mock payment created: ${paymentId}, status: ${status}`);
+    
     return {
       id: paymentId,
-      status: 'pending',
+      status: status,
       qrCode: `data:image/png;base64,${qrCodeBase64}`,
       pixKey: pixKey
     };
@@ -90,14 +113,17 @@ export async function getPayment(
   paymentId: string
 ): Promise<PaymentResult> {
   if (shouldUseMock()) {
+    const status = getMockPaymentStatus(paymentId);
     const qrCodeBase64 = Buffer.from('MOCK_QR_CODE_BASE64').toString('base64');
     const pixKey = `00020126330014BR.GOV.BCB.PIX0114${paymentId.slice(0, 14)}5204000053039865802BR5913MOCK PAYMENT6009SAO PAULO62070503***6304`;
     
+    console.log(`Mock payment get: ${paymentId}, status: ${status}`);
+    
     return {
       id: paymentId,
-      status: 'pending',
-      qrCode: `data:image/png;base64,${qrCodeBase64}`,
-      pixKey: pixKey
+      status: status,
+      qrCode: status === 'pending' ? `data:image/png;base64,${qrCodeBase64}` : undefined,
+      pixKey: status === 'pending' ? pixKey : undefined
     };
   }
 
