@@ -9,7 +9,11 @@ export interface PaymentResult {
 }
 
 const getAbacateClient = () => {
-  return AbacatePay(process.env.ABACATEPAY_API_KEY!);
+  const apiKey = process.env.ABACATEPAY_API_KEY;
+  if (!apiKey) {
+    throw new Error('ABACATEPAY_API_KEY environment variable is required');
+  }
+  return AbacatePay(apiKey);
 };
 
 // Mapeia status do AbacatePay para formato interno
