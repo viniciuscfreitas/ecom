@@ -1,0 +1,4 @@
+-- AlterTable
+ALTER TABLE "Order" ADD COLUMN IF NOT EXISTS "shippingValue" DECIMAL(10,2),
+ADD COLUMN IF NOT EXISTS "deliveryTime" TEXT;
+

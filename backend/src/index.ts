@@ -34,11 +34,22 @@ app.get("/health", (req, res) => {
 
 const PORT = process.env.PORT || 3001;
 
+async function ensureColumnsExist() {
+  try {
+    await prisma.$executeRawUnsafe(`ALTER TABLE "Order" ADD COLUMN IF NOT EXISTS "shippingValue" DECIMAL(10,2)`);
+    await prisma.$executeRawUnsafe(`ALTER TABLE "Order" ADD COLUMN IF NOT EXISTS "deliveryTime" TEXT`);
+  } catch (error) {
+    console.warn("Schema verification warning:", error);
+  }
+}
+
 async function startServer() {
   try {
     console.log("Connecting to database...");
     await prisma.$connect();
     console.log("Database connected successfully");
+
+    await ensureColumnsExist();
 
     app.listen(PORT, () => {
       console.log(`Server running on port ${PORT}`);
