@@ -146,9 +146,28 @@ export default function PaymentPage() {
               <div className="bg-gray-100 p-4 rounded border">
                 <p className="font-mono text-sm break-all">{payment.pixKey}</p>
                 <button
-                  onClick={() => {
-                    navigator.clipboard.writeText(payment.pixKey!);
-                    alert("Chave PIX copiada!");
+                  onClick={async () => {
+                    const text = payment.pixKey!;
+                    let success = false;
+                    try {
+                      if (navigator.clipboard?.writeText) {
+                        await navigator.clipboard.writeText(text);
+                        success = true;
+                      } else {
+                        const textarea = document.createElement("textarea");
+                        textarea.value = text;
+                        textarea.style.position = "fixed";
+                        textarea.style.opacity = "0";
+                        document.body.appendChild(textarea);
+                        textarea.select();
+                        document.execCommand("copy");
+                        document.body.removeChild(textarea);
+                        success = true;
+                      }
+                    } catch {
+                      success = false;
+                    }
+                    alert(success ? "Chave PIX copiada!" : "Erro ao copiar. Selecione o texto manualmente.");
                   }}
                   className="mt-2 bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
                 >
