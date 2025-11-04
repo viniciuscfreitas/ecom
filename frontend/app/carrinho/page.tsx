@@ -2,10 +2,10 @@
 
 import Link from "next/link";
 import { useCart } from "@/lib/useCart";
-import { calculateTotal } from "@/lib/cart";
+import { calculateTotal, removeFromCart, updateCartItem } from "@/lib/cart";
 
 export default function Cart() {
-  const { items: cart, remove, update } = useCart();
+  const { items: cart } = useCart();
 
   const total = calculateTotal(cart);
 
@@ -34,14 +34,14 @@ export default function Cart() {
             <div className="flex items-center gap-4">
               <div className="flex items-center gap-2">
                 <button
-                  onClick={() => update(item.productId, item.quantity - 1)}
+                  onClick={() => updateCartItem(item.productId, item.quantity - 1)}
                   className="bg-gray-200 px-3 py-1 rounded"
                 >
                   -
                 </button>
                 <span>{item.quantity}</span>
                 <button
-                  onClick={() => update(item.productId, item.quantity + 1)}
+                  onClick={() => updateCartItem(item.productId, item.quantity + 1)}
                   className="bg-gray-200 px-3 py-1 rounded"
                 >
                   +
@@ -51,7 +51,7 @@ export default function Cart() {
                 R$ {(item.price * item.quantity).toFixed(2)}
               </p>
               <button
-                onClick={() => remove(item.productId)}
+                onClick={() => removeFromCart(item.productId)}
                 className="text-red-600 hover:text-red-800"
               >
                 Remover

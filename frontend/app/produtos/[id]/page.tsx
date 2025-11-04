@@ -4,13 +4,13 @@ import { useQuery } from "@tanstack/react-query";
 import { useParams } from "next/navigation";
 import api from "@/lib/api";
 import { useCart } from "@/lib/useCart";
+import { addToCart } from "@/lib/cart";
 import Link from "next/link";
 import type { Product } from "@/lib/types";
 
 export default function ProductDetail() {
   const params = useParams();
   const productId = params.id as string;
-  const { add } = useCart();
 
   const { data: product, isLoading } = useQuery<Product>({
     queryKey: ["product", productId],
@@ -40,7 +40,7 @@ export default function ProductDetail() {
   }
 
   const handleAddToCart = () => {
-    add({
+    addToCart({
       productId: product.id,
       quantity: 1,
       price: Number(product.price),
