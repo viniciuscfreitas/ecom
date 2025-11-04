@@ -17,7 +17,10 @@ ENV NODE_ENV=production
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nextjs
 
-COPY --from=builder /app/public ./public
+# Criar diretório public (Next.js standalone mode pode não precisar, mas é seguro ter)
+RUN mkdir -p ./public
+# Copiar public se existir (pode estar vazio, não tem problema)
+COPY --from=builder --chown=nextjs:nodejs /app/public ./public
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 
