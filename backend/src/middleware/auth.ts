@@ -20,7 +20,7 @@ export const authenticateAdmin = (req: Request, res: Response, next: NextFunctio
 
   try {
     const decoded = jwt.verify(token, jwtSecret) as JwtPayload;
-    (req as any).adminId = decoded.adminId;
+    req.adminId = decoded.adminId;
     next();
   } catch (error) {
     return res.status(401).json({ error: "Invalid token" });

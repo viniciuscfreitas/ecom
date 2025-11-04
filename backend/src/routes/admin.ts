@@ -4,6 +4,7 @@ import jwt from "jsonwebtoken";
 import { OrderStatus } from "@prisma/client";
 import { authenticateAdmin } from "../middleware/auth";
 import { prisma } from "../lib/prisma";
+import { ProductUpdateData, isPrismaKnownRequestError } from "../types";
 
 const router = Router();
 
@@ -144,7 +145,7 @@ router.patch("/products/:id", authenticateAdmin, async (req, res) => {
   try {
     const { name, price, stock, description, imageUrl } = req.body;
 
-    const updateData: any = {};
+    const updateData: ProductUpdateData = {};
 
     if (name !== undefined) updateData.name = name;
     if (price !== undefined) {
@@ -170,7 +171,7 @@ router.patch("/products/:id", authenticateAdmin, async (req, res) => {
     res.json(product);
   } catch (error) {
     console.error("Error updating product:", error);
-    if ((error as any).code === "P2025") {
+    if (isPrismaKnownRequestError(error) && error.code === "P2025") {
       return res.status(404).json({ error: "Product not found" });
     }
     res.status(500).json({ error: "Failed to update product" });
@@ -186,7 +187,7 @@ router.delete("/products/:id", authenticateAdmin, async (req, res) => {
     res.json({ success: true });
   } catch (error) {
     console.error("Error deleting product:", error);
-    if ((error as any).code === "P2025") {
+    if (isPrismaKnownRequestError(error) && error.code === "P2025") {
       return res.status(404).json({ error: "Product not found" });
     }
     res.status(500).json({ error: "Failed to delete product" });

@@ -4,6 +4,13 @@ import { useRouter } from "next/navigation";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import adminApi from "@/lib/admin-api";
 import { useAdminAuth } from "@/lib/useAdminAuth";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
+import { Skeleton } from "@/components/ui/skeleton";
+import { toast } from "sonner";
+import { LogOut, Package, ArrowRight } from "lucide-react";
 import type { Order } from "@/lib/types";
 import { ORDER_STATUS_LABELS } from "@/lib/constants";
 
@@ -30,6 +37,10 @@ export default function AdminOrders() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["admin-orders"] });
+      toast.success("Status do pedido atualizado!");
+    },
+    onError: () => {
+      toast.error("Erro ao atualizar status do pedido");
     },
   });
 
@@ -48,7 +59,17 @@ export default function AdminOrders() {
   if (isLoading) {
     return (
       <div className="container mx-auto px-4 py-8">
-        <div className="text-center">Carregando pedidos...</div>
+        <div className="space-y-4">
+          {Array.from({ length: 3 }).map((_, i) => (
+            <Card key={i}>
+              <CardContent className="p-6">
+                <Skeleton className="h-6 w-48 mb-2" />
+                <Skeleton className="h-4 w-96 mb-4" />
+                <Skeleton className="h-4 w-32" />
+              </CardContent>
+            </Card>
+          ))}
+        </div>
       </div>
     );
   }
@@ -58,21 +79,20 @@ export default function AdminOrders() {
       <div className="flex justify-between items-center mb-8">
         <h1 className="text-3xl font-bold">Pedidos</h1>
         <div className="flex gap-4">
-          <button
-            onClick={() => router.push("/admin/produtos")}
-            className="text-blue-600 hover:text-blue-800"
-          >
+          <Button variant="outline" onClick={() => router.push("/admin/produtos")}>
+            <Package className="h-4 w-4 mr-2" />
             Produtos
-          </button>
-          <button
+          </Button>
+          <Button
+            variant="destructive"
             onClick={() => {
               localStorage.removeItem("adminToken");
               router.push("/admin/login");
             }}
-            className="text-red-600 hover:text-red-800"
           >
+            <LogOut className="h-4 w-4 mr-2" />
             Sair
-          </button>
+          </Button>
         </div>
       </div>
 
@@ -87,80 +107,101 @@ export default function AdminOrders() {
           const canUpdateStatus = order.status !== "ENTREGUE";
 
           return (
-            <div key={order.id} className="border rounded-lg p-6">
-              <div className="flex justify-between items-start mb-4">
+            <Card key={order.id}>
+              <CardHeader>
+                <div className="flex justify-between items-start">
+                  <div>
+                    <CardTitle>Pedido #{order.id.slice(0, 8)}</CardTitle>
+                    <div className="mt-2 space-y-1 text-sm text-muted-foreground">
+                      <p>{order.customerName}</p>
+                      <p>{order.customerEmail}</p>
+                      <p>{order.customerPhone}</p>
+                    </div>
+                  </div>
+                  <div className="text-right space-y-2">
+                    <Badge variant="default">
+                      {ORDER_STATUS_LABELS[order.status] || order.status}
+                    </Badge>
+                    {order.paymentStatus && (
+                      <div className="text-sm">
+                        <Badge variant={order.paymentStatus === "paid" ? "default" : "secondary"}>
+                          {order.paymentStatus === "paid" ? "Pago" : order.paymentStatus === "pending" ? "Pendente" : "Expirado"}
+                        </Badge>
+                      </div>
+                    )}
+                    {order.deliveryTime && (
+                      <p className="text-sm text-muted-foreground">
+                        {order.deliveryTime === "MANHA" ? "Manhã (9h-12h)" : "Tarde (14h-18h)"}
+                      </p>
+                    )}
+                    <p className="text-sm text-muted-foreground">
+                      {new Date(order.createdAt).toLocaleDateString("pt-BR")}
+                    </p>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-4">
                 <div>
-                  <p className="font-semibold">Pedido #{order.id.slice(0, 8)}</p>
-                  <p className="text-sm text-gray-600">{order.customerName}</p>
-                  <p className="text-sm text-gray-600">{order.customerEmail}</p>
-                  <p className="text-sm text-gray-600">{order.customerPhone}</p>
+                  <p className="font-semibold mb-2">Itens:</p>
+                  <ul className="list-disc list-inside space-y-1">
+                    {order.items.map((item) => (
+                      <li key={item.id} className="text-sm">
+                        {item.product.name} x {item.quantity} - R${" "}
+                        {(Number(item.price) * item.quantity).toFixed(2)}
+                      </li>
+                    ))}
+                  </ul>
+                  <Separator className="my-4" />
+                  <div className="space-y-1 text-sm">
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Subtotal:</span>
+                      <span>R$ {subtotal.toFixed(2)}</span>
+                    </div>
+                    {shipping > 0 && (
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Frete:</span>
+                        <span>R$ {shipping.toFixed(2)}</span>
+                      </div>
+                    )}
+                    <Separator />
+                    <div className="flex justify-between font-semibold">
+                      <span>Total:</span>
+                      <span>R$ {total.toFixed(2)}</span>
+                    </div>
+                  </div>
                 </div>
-                <div className="text-right">
-                  <p className="font-semibold">Status: {ORDER_STATUS_LABELS[order.status] || order.status}</p>
-                  {order.paymentStatus && (
-                    <p className="text-sm font-semibold">
-                      Pagamento: {order.paymentStatus === "paid" ? "✅ Pago" : order.paymentStatus === "pending" ? "⏳ Pendente" : "❌ Expirado"}
+
+                {order.address && (
+                  <div>
+                    <p className="font-semibold mb-2">Endereço:</p>
+                    <p className="text-sm text-muted-foreground">
+                      {order.address.street}, {order.address.number}
+                      {order.address.complement && `, ${order.address.complement}`}
                     </p>
-                  )}
-                  {order.deliveryTime && (
-                    <p className="text-sm text-gray-600">
-                      Horário: {order.deliveryTime === "MANHA" ? "Manhã (9h-12h)" : "Tarde (14h-18h)"}
+                    <p className="text-sm text-muted-foreground">
+                      {order.address.neighborhood}, {order.address.city} - {order.address.zipCode}
                     </p>
-                  )}
-                  <p className="text-sm text-gray-600">
-                    {new Date(order.createdAt).toLocaleDateString("pt-BR")}
-                  </p>
-                </div>
-              </div>
+                  </div>
+                )}
 
-              <div className="mb-4">
-                <p className="font-semibold mb-2">Itens:</p>
-                <ul className="list-disc list-inside space-y-1">
-                  {order.items.map((item) => (
-                    <li key={item.id}>
-                      {item.product.name} x {item.quantity} - R${" "}
-                      {(Number(item.price) * item.quantity).toFixed(2)}
-                    </li>
-                  ))}
-                </ul>
-                <div className="mt-2 space-y-1">
-                  <p className="text-sm">Subtotal: R$ {subtotal.toFixed(2)}</p>
-                  {shipping > 0 && (
-                    <p className="text-sm">Frete: R$ {shipping.toFixed(2)}</p>
-                  )}
-                  <p className="font-semibold">Total: R$ {total.toFixed(2)}</p>
-                </div>
-              </div>
-
-              {order.address && (
-                <div className="mb-4">
-                  <p className="font-semibold mb-2">Endereço:</p>
-                  <p className="text-sm text-gray-600">
-                    {order.address.street}, {order.address.number}
-                    {order.address.complement && `, ${order.address.complement}`}
-                  </p>
-                  <p className="text-sm text-gray-600">
-                    {order.address.neighborhood}, {order.address.city} - {order.address.zipCode}
-                  </p>
-                </div>
-              )}
-
-              {canUpdateStatus && (
-                <button
-                  onClick={() => handleStatusUpdate(order.id, order.status)}
-                  disabled={updateStatusMutation.isPending}
-                  className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 disabled:bg-gray-300"
-                >
-                  {updateStatusMutation.isPending
-                    ? "Atualizando..."
-                    : `Atualizar para: ${
-                        ORDER_STATUS_LABELS[
-                          statusOrder[statusOrder.indexOf(order.status) + 1]
-                        ]
-                      }`}
-                </button>
-              )}
-            </div>
+                {canUpdateStatus && (
+                  <Button
+                    onClick={() => handleStatusUpdate(order.id, order.status)}
+                    disabled={updateStatusMutation.isPending}
+                    className="w-full"
+                  >
+                    {updateStatusMutation.isPending ? (
+                      "Atualizando..."
+                    ) : (
+                      <>
+                        Atualizar para: {ORDER_STATUS_LABELS[statusOrder[statusOrder.indexOf(order.status) + 1]]}
+                        <ArrowRight className="h-4 w-4 ml-2" />
+                      </>
+                    )}
+                  </Button>
+                )}
+              </CardContent>
+            </Card>
           );
         })}
       </div>

@@ -1,8 +1,14 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { addToCart } from "@/lib/cart";
+import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import type { Product } from "@/lib/types";
+import { ImageIcon } from "lucide-react";
+import { toast } from "sonner";
 
 interface ProductCardProps {
   product: Product;
@@ -18,6 +24,7 @@ export default function ProductCard({ product }: ProductCardProps) {
       price: Number(product.price),
       name: product.name,
     });
+    toast.success("Produto adicionado ao carrinho!");
   };
 
   const price = Number(product.price);
@@ -25,71 +32,60 @@ export default function ProductCard({ product }: ProductCardProps) {
   const installmentValue = (price / 3).toFixed(2);
 
   return (
-    <div className="bg-white border border-gray-200 rounded-lg overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300 flex flex-col">
+    <Card className="overflow-hidden hover:shadow-lg transition-shadow flex flex-col h-full">
       <Link href={`/produtos/${product.id}`} className="flex-1 flex flex-col">
-        <div className="relative aspect-square bg-gray-100 overflow-hidden">
+        <div className="relative aspect-square bg-muted overflow-hidden">
           {product.imageUrl ? (
-            <img
+            <Image
               src={product.imageUrl}
               alt={product.name}
-              className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
+              fill
+              className="object-cover hover:scale-105 transition-transform duration-300"
+              sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
             />
           ) : (
-            <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-green-100 to-blue-100">
-              <svg
-                className="w-16 h-16 text-gray-400"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
-                />
-              </svg>
+            <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-primary/10 to-primary/5">
+              <ImageIcon className="w-16 h-16 text-muted-foreground" />
             </div>
           )}
           {product.stock === 0 && (
-            <div className="absolute top-2 right-2 bg-red-500 text-white text-xs font-bold px-2 py-1 rounded">
+            <Badge variant="destructive" className="absolute top-2 right-2">
               Esgotado
-            </div>
+            </Badge>
           )}
           {product.stock > 0 && (
-            <div className="absolute top-2 right-2 bg-green-500 text-white text-xs font-bold px-2 py-1 rounded">
+            <Badge variant="default" className="absolute top-2 right-2">
               Em estoque
-            </div>
+            </Badge>
           )}
         </div>
-        <div className="p-4 flex-1 flex flex-col">
-          <h2 className="text-lg font-semibold text-gray-900 mb-2 line-clamp-2">
+        <CardHeader className="flex-1 flex flex-col">
+          <h2 className="text-lg font-semibold line-clamp-2">
             {product.name}
           </h2>
-          <div className="mt-auto">
-            <div className="mb-3">
-              <p className="text-2xl font-bold text-green-600">
-                R$ {price.toFixed(2)}
+          <div className="mt-auto space-y-1">
+            <p className="text-2xl font-bold text-primary">
+              R$ {price.toFixed(2)}
+            </p>
+            {showInstallment && (
+              <p className="text-sm text-muted-foreground">
+                ou 3x de R$ {installmentValue} sem juros
               </p>
-              {showInstallment && (
-                <p className="text-sm text-gray-500">
-                  ou 3x de R$ {installmentValue} sem juros
-                </p>
-              )}
-            </div>
+            )}
           </div>
-        </div>
+        </CardHeader>
       </Link>
-      <div className="p-4 pt-0">
-        <button
+      <CardFooter className="pt-0">
+        <Button
           onClick={handleAddToCart}
           disabled={product.stock === 0}
-          className="w-full bg-green-600 text-white py-2 rounded-lg hover:bg-green-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors font-medium"
+          className="w-full"
+          size="lg"
         >
           {product.stock === 0 ? "Fora de estoque" : "Adicionar ao Carrinho"}
-        </button>
-      </div>
-    </div>
+        </Button>
+      </CardFooter>
+    </Card>
   );
 }
 

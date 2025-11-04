@@ -2,9 +2,18 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
+import { AxiosError } from "axios";
 import { useCart } from "@/lib/useCart";
-import { clearCart } from "@/lib/cart";
 import api from "@/lib/api";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Button } from "@/components/ui/button";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Separator } from "@/components/ui/separator";
+import { toast } from "sonner";
+import type { InsufficientStockDetail } from "@/lib/types";
 
 export default function Checkout() {
   const router = useRouter();
@@ -53,24 +62,25 @@ export default function Checkout() {
 
       const response = await api.post("/orders", orderData);
       router.push(`/pagamento/${response.data.id}`);
-    } catch (error: any) {
+    } catch (error) {
       console.error("Error creating order:", error);
+      const axiosError = error as AxiosError<{ error?: string; details?: InsufficientStockDetail[] }>;
       
-      if (error.response?.status === 400 && error.response?.data?.error === "Insufficient stock") {
-        const details = error.response.data.details || [];
-        const productsList = details.map((d: any) => 
+      if (axiosError.response?.status === 400 && axiosError.response?.data?.error === "Insufficient stock") {
+        const details = axiosError.response.data.details || [];
+        const productsList = details.map((d) => 
           `- ${d.productName}: disponível ${d.available}, solicitado ${d.requested}`
         ).join("\n");
-        alert(`Estoque insuficiente para alguns produtos:\n\n${productsList}\n\nPor favor, ajuste as quantidades e tente novamente.`);
+        toast.error(`Estoque insuficiente para alguns produtos:\n\n${productsList}\n\nPor favor, ajuste as quantidades e tente novamente.`);
       } else {
-        alert("Erro ao criar pedido. Tente novamente.");
+        toast.error("Erro ao criar pedido. Tente novamente.");
       }
     } finally {
       setLoading(false);
     }
   };
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({
       ...formData,
       [e.target.name]: e.target.value,
@@ -104,10 +114,10 @@ export default function Checkout() {
     return (
       <div className="container mx-auto px-4 py-8">
         <h1 className="text-3xl font-bold mb-8">Checkout</h1>
-        <p className="text-gray-600 mb-4">Seu carrinho está vazio</p>
-        <a href="/" className="text-blue-600 hover:underline">
-          Continuar comprando
-        </a>
+        <p className="text-muted-foreground mb-4">Seu carrinho está vazio</p>
+        <Button asChild>
+          <Link href="/">Continuar comprando</Link>
+        </Button>
       </div>
     );
   }
@@ -116,152 +126,183 @@ export default function Checkout() {
     <div className="container mx-auto px-4 py-8 max-w-2xl">
       <h1 className="text-3xl font-bold mb-8">Checkout</h1>
       <form onSubmit={handleSubmit} className="space-y-6">
-        <div>
-          <h2 className="text-xl font-semibold mb-4">Dados Pessoais</h2>
-          <div className="space-y-4">
-            <input
-              type="text"
-              name="customerName"
-              placeholder="Nome completo"
-              required
-              value={formData.customerName}
-              onChange={handleChange}
-              className="w-full border rounded px-4 py-2"
-            />
-            <input
-              type="email"
-              name="customerEmail"
-              placeholder="Email"
-              required
-              value={formData.customerEmail}
-              onChange={handleChange}
-              className="w-full border rounded px-4 py-2"
-            />
-            <input
-              type="tel"
-              name="customerPhone"
-              placeholder="Telefone"
-              required
-              value={formData.customerPhone}
-              onChange={handleChange}
-              className="w-full border rounded px-4 py-2"
-            />
-          </div>
-        </div>
-
-        <div>
-          <h2 className="text-xl font-semibold mb-4">Endereço de Entrega</h2>
-          <div className="space-y-4">
-            <input
-              type="text"
-              name="street"
-              placeholder="Rua"
-              required
-              value={formData.street}
-              onChange={handleChange}
-              className="w-full border rounded px-4 py-2"
-            />
-            <div className="grid grid-cols-2 gap-4">
-              <input
-                type="text"
-                name="number"
-                placeholder="Número"
+        <Card>
+          <CardHeader>
+            <CardTitle>Dados Pessoais</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="customerName">Nome completo</Label>
+              <Input
+                id="customerName"
+                name="customerName"
+                placeholder="Nome completo"
                 required
-                value={formData.number}
+                value={formData.customerName}
                 onChange={handleChange}
-                className="border rounded px-4 py-2"
-              />
-              <input
-                type="text"
-                name="complement"
-                placeholder="Complemento"
-                value={formData.complement}
-                onChange={handleChange}
-                className="border rounded px-4 py-2"
               />
             </div>
-            <input
-              type="text"
-              name="neighborhood"
-              placeholder="Bairro"
-              required
-              value={formData.neighborhood}
-              onChange={handleChange}
-              className="w-full border rounded px-4 py-2"
-            />
+            <div className="space-y-2">
+              <Label htmlFor="customerEmail">Email</Label>
+              <Input
+                id="customerEmail"
+                type="email"
+                name="customerEmail"
+                placeholder="Email"
+                required
+                value={formData.customerEmail}
+                onChange={handleChange}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="customerPhone">Telefone</Label>
+              <Input
+                id="customerPhone"
+                type="tel"
+                name="customerPhone"
+                placeholder="Telefone"
+                required
+                value={formData.customerPhone}
+                onChange={handleChange}
+              />
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Endereço de Entrega</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="street">Rua</Label>
+              <Input
+                id="street"
+                name="street"
+                placeholder="Rua"
+                required
+                value={formData.street}
+                onChange={handleChange}
+              />
+            </div>
             <div className="grid grid-cols-2 gap-4">
-              <input
-                type="text"
-                name="city"
-                placeholder="Cidade"
+              <div className="space-y-2">
+                <Label htmlFor="number">Número</Label>
+                <Input
+                  id="number"
+                  name="number"
+                  placeholder="Número"
+                  required
+                  value={formData.number}
+                  onChange={handleChange}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="complement">Complemento</Label>
+                <Input
+                  id="complement"
+                  name="complement"
+                  placeholder="Complemento"
+                  value={formData.complement}
+                  onChange={handleChange}
+                />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="neighborhood">Bairro</Label>
+              <Input
+                id="neighborhood"
+                name="neighborhood"
+                placeholder="Bairro"
                 required
-                value={formData.city}
+                value={formData.neighborhood}
                 onChange={handleChange}
-                className="border rounded px-4 py-2"
               />
-              <input
-                type="text"
-                name="zipCode"
-                placeholder="CEP"
-                required
-                value={formData.zipCode}
-                onChange={handleChange}
-                className="border rounded px-4 py-2"
-              />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="city">Cidade</Label>
+                <Input
+                  id="city"
+                  name="city"
+                  placeholder="Cidade"
+                  required
+                  value={formData.city}
+                  onChange={handleChange}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="zipCode">CEP</Label>
+                <Input
+                  id="zipCode"
+                  name="zipCode"
+                  placeholder="CEP"
+                  required
+                  value={formData.zipCode}
+                  onChange={handleChange}
+                />
+              </div>
             </div>
             {loadingShipping && (
-              <p className="text-sm text-gray-600">Calculando frete...</p>
+              <p className="text-sm text-muted-foreground">Calculando frete...</p>
             )}
             {shippingValue !== null && !loadingShipping && (
-              <p className="text-sm font-semibold text-green-600">
+              <p className="text-sm font-semibold text-primary">
                 Frete: R$ {shippingValue.toFixed(2)}
               </p>
             )}
-          </div>
-        </div>
+          </CardContent>
+        </Card>
 
-        <div>
-          <h2 className="text-xl font-semibold mb-4">Horário de Entrega</h2>
-          <select
-            name="deliveryTime"
-            value={formData.deliveryTime}
-            onChange={handleChange}
-            className="w-full border rounded px-4 py-2"
-          >
-            <option value="">Selecione um horário</option>
-            <option value="MANHA">Manhã (9h - 12h)</option>
-            <option value="TARDE">Tarde (14h - 18h)</option>
-          </select>
-        </div>
+        <Card>
+          <CardHeader>
+            <CardTitle>Horário de Entrega</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <Select
+              name="deliveryTime"
+              value={formData.deliveryTime}
+              onValueChange={(value) => setFormData({ ...formData, deliveryTime: value })}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Selecione um horário" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="MANHA">Manhã (9h - 12h)</SelectItem>
+                <SelectItem value="TARDE">Tarde (14h - 18h)</SelectItem>
+              </SelectContent>
+            </Select>
+          </CardContent>
+        </Card>
 
-        <div className="border-t pt-4">
-          <div className="flex justify-between items-center mb-4">
-            <span className="text-lg font-semibold">Subtotal:</span>
-            <span className="text-lg font-semibold">
-              R$ {subtotal.toFixed(2)}
-            </span>
-          </div>
-          {shippingValue !== null && (
-            <div className="flex justify-between items-center mb-4">
-              <span className="text-lg font-semibold">Frete:</span>
-              <span className="text-lg font-semibold">R$ {shippingValue.toFixed(2)}</span>
+        <Card>
+          <CardHeader>
+            <CardTitle>Resumo do Pedido</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="flex justify-between text-muted-foreground">
+              <span>Subtotal:</span>
+              <span className="font-semibold text-foreground">R$ {subtotal.toFixed(2)}</span>
             </div>
-          )}
-          <div className="flex justify-between items-center mb-4">
-            <span className="text-xl font-bold">Total:</span>
-            <span className="text-2xl font-bold text-green-600">
-              R$ {total.toFixed(2)}
-            </span>
-          </div>
-        </div>
+            {shippingValue !== null && (
+              <div className="flex justify-between text-muted-foreground">
+                <span>Frete:</span>
+                <span className="font-semibold text-foreground">R$ {shippingValue.toFixed(2)}</span>
+              </div>
+            )}
+            <Separator />
+            <div className="flex justify-between items-center">
+              <span className="text-xl font-semibold">Total:</span>
+              <span className="text-2xl font-bold text-primary">
+                R$ {total.toFixed(2)}
+              </span>
+            </div>
+          </CardContent>
+        </Card>
 
-        <button
-          type="submit"
-          disabled={loading}
-          className="w-full bg-blue-600 text-white py-3 rounded hover:bg-blue-700 disabled:bg-gray-300"
-        >
+        <Button type="submit" disabled={loading} size="lg" className="w-full">
           {loading ? "Processando..." : "Finalizar Pedido"}
-        </button>
+        </Button>
       </form>
     </div>
   );

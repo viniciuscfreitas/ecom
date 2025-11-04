@@ -49,3 +49,25 @@ export interface PaymentData {
   isMock?: boolean;
 }
 
+export interface ProductCreateData {
+  name: string;
+  price: number;
+  stock: number;
+  description?: string;
+  imageUrl?: string;
+}
+
+export interface ProductUpdateData {
+  name?: string;
+  price?: number;
+  stock?: number;
+  description?: string | null;
+  imageUrl?: string | null;
+}
+
+export interface InsufficientStockDetail {
+  productName: string;
+  available: number;
+  requested: number;
+}
+

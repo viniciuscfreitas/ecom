@@ -3,6 +3,7 @@ import "./globals.css";
 import { QueryClientProvider } from "@/lib/query-client";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
+import { Toaster } from "@/components/ui/sonner";
 
 export const metadata: Metadata = {
   title: "Pet Shop E-commerce",
@@ -15,12 +16,13 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="pt-BR">
+    <html lang="pt-BR" suppressHydrationWarning>
       <body className="flex flex-col min-h-screen">
         <QueryClientProvider>
           <Header />
           <main className="flex-1">{children}</main>
           <Footer />
+          <Toaster />
         </QueryClientProvider>
       </body>
     </html>

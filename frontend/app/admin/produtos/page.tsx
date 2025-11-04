@@ -2,10 +2,20 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import adminApi from "@/lib/admin-api";
 import { useAdminAuth } from "@/lib/useAdminAuth";
-import type { Product } from "@/lib/types";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Button } from "@/components/ui/button";
+import { Separator } from "@/components/ui/separator";
+import { Skeleton } from "@/components/ui/skeleton";
+import { toast } from "sonner";
+import { LogOut, Package, Plus, Edit, Trash2 } from "lucide-react";
+import type { Product, ProductCreateData, ProductUpdateData } from "@/lib/types";
 
 export default function AdminProducts() {
   const router = useRouter();
@@ -31,24 +41,32 @@ export default function AdminProducts() {
   });
 
   const createMutation = useMutation({
-    mutationFn: async (data: any) => {
+    mutationFn: async (data: ProductCreateData) => {
       const response = await adminApi.post("/admin/products", data);
       return response.data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["admin-products"] });
       resetForm();
+      toast.success("Produto criado com sucesso!");
+    },
+    onError: () => {
+      toast.error("Erro ao criar produto");
     },
   });
 
   const updateMutation = useMutation({
-    mutationFn: async ({ id, data }: { id: string; data: any }) => {
+    mutationFn: async ({ id, data }: { id: string; data: ProductUpdateData }) => {
       const response = await adminApi.patch(`/admin/products/${id}`, data);
       return response.data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["admin-products"] });
       resetForm();
+      toast.success("Produto atualizado com sucesso!");
+    },
+    onError: () => {
+      toast.error("Erro ao atualizar produto");
     },
   });
 
@@ -104,8 +122,15 @@ export default function AdminProducts() {
   };
 
   const handleDelete = (id: string, name: string) => {
-    if (confirm(`Tem certeza que deseja deletar o produto "${name}"?`)) {
-      deleteMutation.mutate(id);
+    if (window.confirm(`Tem certeza que deseja deletar o produto "${name}"?`)) {
+      deleteMutation.mutate(id, {
+        onSuccess: () => {
+          toast.success("Produto deletado com sucesso!");
+        },
+        onError: () => {
+          toast.error("Erro ao deletar produto");
+        },
+      });
     }
   };
 
@@ -116,7 +141,17 @@ export default function AdminProducts() {
   if (isLoading) {
     return (
       <div className="container mx-auto px-4 py-8">
-        <div className="text-center">Carregando produtos...</div>
+        <div className="space-y-4">
+          {Array.from({ length: 3 }).map((_, i) => (
+            <Card key={i}>
+              <CardContent className="p-6">
+                <Skeleton className="h-6 w-48 mb-2" />
+                <Skeleton className="h-4 w-96 mb-4" />
+                <Skeleton className="h-4 w-32" />
+              </CardContent>
+            </Card>
+          ))}
+        </div>
       </div>
     );
   }
@@ -126,156 +161,159 @@ export default function AdminProducts() {
       <div className="flex justify-between items-center mb-8">
         <h1 className="text-3xl font-bold">Produtos</h1>
         <div className="flex gap-4">
-          <button
-            onClick={() => router.push("/admin/pedidos")}
-            className="text-blue-600 hover:text-blue-800"
-          >
+          <Button variant="outline" onClick={() => router.push("/admin/pedidos")}>
+            <Package className="h-4 w-4 mr-2" />
             Pedidos
-          </button>
+          </Button>
           {!showForm && (
-            <button
+            <Button
               onClick={() => {
                 resetForm();
                 setShowForm(true);
               }}
-              className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
             >
+              <Plus className="h-4 w-4 mr-2" />
               Adicionar Produto
-            </button>
+            </Button>
           )}
-          <button
+          <Button
+            variant="destructive"
             onClick={() => {
               localStorage.removeItem("adminToken");
               router.push("/admin/login");
             }}
-            className="text-red-600 hover:text-red-800"
           >
+            <LogOut className="h-4 w-4 mr-2" />
             Sair
-          </button>
+          </Button>
         </div>
       </div>
 
       {showForm && (
-        <div className="mb-8 border rounded-lg p-6">
-          <h2 className="text-xl font-semibold mb-4">
-            {editingProduct ? "Editar Produto" : "Novo Produto"}
-          </h2>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium mb-1">Nome *</label>
-              <input
-                type="text"
-                required
-                value={formData.name}
-                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                className="w-full border rounded px-4 py-2"
-              />
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium mb-1">Preço *</label>
-                <input
-                  type="number"
-                  step="0.01"
-                  min="0.01"
+        <Card className="mb-8">
+          <CardHeader>
+            <CardTitle>{editingProduct ? "Editar Produto" : "Novo Produto"}</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="name">Nome *</Label>
+                <Input
+                  id="name"
+                  type="text"
                   required
-                  value={formData.price}
-                  onChange={(e) => setFormData({ ...formData, price: e.target.value })}
-                  className="w-full border rounded px-4 py-2"
+                  value={formData.name}
+                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                 />
               </div>
-              <div>
-                <label className="block text-sm font-medium mb-1">Estoque *</label>
-                <input
-                  type="number"
-                  min="0"
-                  required
-                  value={formData.stock}
-                  onChange={(e) => setFormData({ ...formData, stock: e.target.value })}
-                  className="w-full border rounded px-4 py-2"
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="price">Preço *</Label>
+                  <Input
+                    id="price"
+                    type="number"
+                    step="0.01"
+                    min="0.01"
+                    required
+                    value={formData.price}
+                    onChange={(e) => setFormData({ ...formData, price: e.target.value })}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="stock">Estoque *</Label>
+                  <Input
+                    id="stock"
+                    type="number"
+                    min="0"
+                    required
+                    value={formData.stock}
+                    onChange={(e) => setFormData({ ...formData, stock: e.target.value })}
+                  />
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="description">Descrição</Label>
+                <Textarea
+                  id="description"
+                  value={formData.description}
+                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                  rows={3}
                 />
               </div>
-            </div>
-            <div>
-              <label className="block text-sm font-medium mb-1">Descrição</label>
-              <textarea
-                value={formData.description}
-                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                className="w-full border rounded px-4 py-2"
-                rows={3}
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium mb-1">URL da Imagem</label>
-              <input
-                type="url"
-                value={formData.imageUrl}
-                onChange={(e) => setFormData({ ...formData, imageUrl: e.target.value })}
-                className="w-full border rounded px-4 py-2"
-              />
-            </div>
-            <div className="flex gap-2">
-              <button
-                type="submit"
-                disabled={createMutation.isPending || updateMutation.isPending}
-                className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 disabled:bg-gray-300"
-              >
-                {createMutation.isPending || updateMutation.isPending
-                  ? "Salvando..."
-                  : editingProduct
-                  ? "Atualizar"
-                  : "Criar"}
-              </button>
-              <button
-                type="button"
-                onClick={resetForm}
-                className="bg-gray-600 text-white px-4 py-2 rounded hover:bg-gray-700"
-              >
-                Cancelar
-              </button>
-            </div>
-          </form>
-        </div>
+              <div className="space-y-2">
+                <Label htmlFor="imageUrl">URL da Imagem</Label>
+                <Input
+                  id="imageUrl"
+                  type="url"
+                  value={formData.imageUrl}
+                  onChange={(e) => setFormData({ ...formData, imageUrl: e.target.value })}
+                />
+              </div>
+              <div className="flex gap-2">
+                <Button
+                  type="submit"
+                  disabled={createMutation.isPending || updateMutation.isPending}
+                >
+                  {createMutation.isPending || updateMutation.isPending
+                    ? "Salvando..."
+                    : editingProduct
+                    ? "Atualizar"
+                    : "Criar"}
+                </Button>
+                <Button type="button" variant="outline" onClick={resetForm}>
+                  Cancelar
+                </Button>
+              </div>
+            </form>
+          </CardContent>
+        </Card>
       )}
 
       <div className="space-y-4">
         {products?.map((product) => (
-          <div key={product.id} className="border rounded-lg p-6">
-            <div className="flex justify-between items-start">
-              <div className="flex-1">
-                <h3 className="text-xl font-semibold mb-2">{product.name}</h3>
-                {product.description && (
-                  <p className="text-gray-600 mb-2">{product.description}</p>
-                )}
-                <div className="flex gap-4 text-sm">
-                  <span className="font-semibold">Preço: R$ {Number(product.price).toFixed(2)}</span>
-                  <span className="font-semibold">Estoque: {product.stock}</span>
+          <Card key={product.id}>
+            <CardContent className="p-6">
+              <div className="flex justify-between items-start">
+                <div className="flex-1">
+                  <h3 className="text-xl font-semibold mb-2">{product.name}</h3>
+                  {product.description && (
+                    <p className="text-muted-foreground mb-2">{product.description}</p>
+                  )}
+                  <div className="flex gap-4 text-sm mb-2">
+                    <span className="font-semibold">Preço: R$ {Number(product.price).toFixed(2)}</span>
+                    <span className="font-semibold">Estoque: {product.stock}</span>
+                  </div>
+                  {product.imageUrl && (
+                    <Image
+                      src={product.imageUrl}
+                      alt={product.name}
+                      width={128}
+                      height={128}
+                      className="mt-2 w-32 h-32 object-cover rounded"
+                      unoptimized
+                    />
+                  )}
                 </div>
-                {product.imageUrl && (
-                  <img
-                    src={product.imageUrl}
-                    alt={product.name}
-                    className="mt-2 w-32 h-32 object-cover rounded"
-                  />
-                )}
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    onClick={() => handleEdit(product)}
+                  >
+                    <Edit className="h-4 w-4 mr-2" />
+                    Editar
+                  </Button>
+                  <Button
+                    variant="destructive"
+                    onClick={() => handleDelete(product.id, product.name)}
+                    disabled={deleteMutation.isPending}
+                  >
+                    <Trash2 className="h-4 w-4 mr-2" />
+                    Deletar
+                  </Button>
+                </div>
               </div>
-              <div className="flex gap-2">
-                <button
-                  onClick={() => handleEdit(product)}
-                  className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
-                >
-                  Editar
-                </button>
-                <button
-                  onClick={() => handleDelete(product.id, product.name)}
-                  disabled={deleteMutation.isPending}
-                  className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700 disabled:bg-gray-300"
-                >
-                  Deletar
-                </button>
-              </div>
-            </div>
-          </div>
+            </CardContent>
+          </Card>
         ))}
       </div>
     </div>

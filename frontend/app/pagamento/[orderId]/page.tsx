@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
+import Image from "next/image";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import api from "@/lib/api";
 import { clearCart } from "@/lib/cart";
@@ -124,16 +125,22 @@ export default function PaymentPage() {
               <h2 className="text-xl font-semibold mb-4">Escaneie o QR Code</h2>
               <div className="bg-white p-4 rounded border flex justify-center">
                 {payment.qrCode.startsWith('data:image') ? (
-                  <img
+                  <Image
                     src={payment.qrCode}
                     alt="QR Code PIX"
+                    width={300}
+                    height={300}
                     className="max-w-xs"
+                    unoptimized
                   />
                 ) : (
-                  <img
+                  <Image
                     src={`data:image/png;base64,${payment.qrCode}`}
                     alt="QR Code PIX"
+                    width={300}
+                    height={300}
                     className="max-w-xs"
+                    unoptimized
                   />
                 )}
               </div>

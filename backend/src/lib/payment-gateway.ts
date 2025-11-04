@@ -116,9 +116,13 @@ export async function getPayment(
   throw new Error('No data returned from AbacatePay');
 }
 
+export interface WebhookData {
+  [key: string]: unknown;
+}
+
 export async function processWebhook(
   event: string,
-  data: any,
+  data: WebhookData,
   signature?: string,
   rawBody?: string
 ): Promise<{ paymentId: string; status: string }> {
@@ -136,8 +140,9 @@ export async function processWebhook(
   }
 
   if (event === "billing.paid") {
+    const paymentId = typeof data.id === "string" ? data.id : String(data.id);
     return {
-      paymentId: data.id,
+      paymentId,
       status: "paid"
     };
   }
