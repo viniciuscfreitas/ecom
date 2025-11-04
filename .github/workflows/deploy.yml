@@ -24,17 +24,18 @@ jobs:
         run: |
           ssh -o StrictHostKeyChecking=no ${{ secrets.VM_USER }}@${{ secrets.VM_HOST }} << 'EOF'
             set -e
-            REPO_DIR="${REPO_DIR:-/opt/ecom}"
+            REPO_DIR="${REPO_DIR:-$HOME/www/ecom}"
             if [ ! -d "$REPO_DIR" ]; then
+              mkdir -p "$(dirname "$REPO_DIR")"
               git clone https://github.com/viniciuscfreitas/ecom.git "$REPO_DIR"
             fi
             cd "$REPO_DIR"
             git pull origin main
-            docker-compose -f docker-compose.prod.yml down || true
-            docker-compose -f docker-compose.prod.yml build --no-cache
-            docker-compose -f docker-compose.prod.yml up -d
+            docker compose -f docker-compose.prod.yml down || true
+            docker compose -f docker-compose.prod.yml build --no-cache
+            docker compose -f docker-compose.prod.yml up -d
             sleep 5
-            docker-compose -f docker-compose.prod.yml exec -T backend npm run prisma:generate || true
-            docker-compose -f docker-compose.prod.yml exec -T backend npm run prisma:migrate deploy || true
+            docker compose -f docker-compose.prod.yml exec -T backend npm run prisma:generate || true
+            docker compose -f docker-compose.prod.yml exec -T backend npm run prisma:migrate deploy || true
           EOF
 
