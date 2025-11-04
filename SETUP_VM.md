@@ -16,13 +16,50 @@ docker --version
 docker compose version
 ```
 
-## 2. Navegar para o diretório do projeto
+## 2. Verificar portas em uso (ANTES de configurar)
+
+**IMPORTANTE:** Verifique quais portas estão livres antes de configurar o docker-compose!
+
+```bash
+# Ver portas dos containers Docker
+docker ps --format "table {{.Names}}\t{{.Ports}}" | grep -E '3000|3001|3002|3003|3004'
+
+# OU usar ss (vem instalado por padrão)
+ss -tulpn | grep -E ':(3000|3001|3002|3003|3004)'
+
+# OU verificar portas específicas
+ss -tulpn | grep :3000 || echo "✅ Porta 3000 livre"
+ss -tulpn | grep :3001 || echo "✅ Porta 3001 livre"
+ss -tulpn | grep :3002 || echo "✅ Porta 3002 livre"
+ss -tulpn | grep :3003 || echo "✅ Porta 3003 livre"
+ss -tulpn | grep :3004 || echo "✅ Porta 3004 livre"
+```
+
+**Se as portas 3000 e 3001 estiverem ocupadas, você precisará mudar no `docker-compose.prod.yml`:**
+
+```bash
+nano docker-compose.prod.yml
+```
+
+**Mude as portas (exemplo: usar 3003 e 3004 se estiverem livres):**
+
+```yaml
+# Frontend
+ports:
+  - "3003:3000"  # Mude o primeiro número (esquerda) para uma porta livre
+
+# Backend  
+ports:
+  - "3004:3001"  # Mude o primeiro número (esquerda) para uma porta livre
+```
+
+## 3. Navegar para o diretório do projeto
 
 ```bash
 cd ~/www/ecom
 ```
 
-## 3. Criar arquivo .env na raiz do projeto
+## 4. Criar arquivo .env na raiz do projeto
 
 ```bash
 nano .env
@@ -47,7 +84,7 @@ NEXT_PUBLIC_API_URL=http://SEU_IP_OU_DOMINIO:3001/api
 
 **Salve com `Ctrl+O`, `Enter`, `Ctrl+X`**
 
-## 4. Rodar pela primeira vez
+## 5. Rodar pela primeira vez
 
 ```bash
 # Buildar e subir os containers
@@ -66,7 +103,7 @@ docker compose -f docker-compose.prod.yml exec backend npm run prisma:migrate de
 docker compose -f docker-compose.prod.yml exec backend npm run prisma:seed
 ```
 
-## 5. Verificar se está rodando
+## 6. Verificar se está rodando
 
 ```bash
 # Ver status dos containers
@@ -76,15 +113,15 @@ docker compose -f docker-compose.prod.yml ps
 docker compose -f docker-compose.prod.yml logs -f
 ```
 
-## 6. Acessar a aplicação
+## 7. Acessar a aplicação
 
-- **Frontend**: `http://SEU_IP:3000`
-- **Backend API**: `http://SEU_IP:3001/api`
-- **Admin Login**: `http://SEU_IP:3000/admin/login`
+- **Frontend**: `http://SEU_IP:3003` (ou porta que você configurou)
+- **Backend API**: `http://SEU_IP:3004/api` (ou porta que você configurou)
+- **Admin Login**: `http://SEU_IP:3003/admin/login`
   - Email: `admin@petshop.com`
   - Senha: `admin123`
 
-## 7. Configurar CI/CD (GitHub Actions) - OPCIONAL
+## 8. Configurar CI/CD (GitHub Actions) - OPCIONAL
 
 O CI/CD já está configurado! Só precisa adicionar os secrets no GitHub:
 
