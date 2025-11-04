@@ -21,6 +21,7 @@ export default function Checkout() {
   const [loading, setLoading] = useState(false);
   const [shippingValue, setShippingValue] = useState<number | null>(null);
   const [loadingShipping, setLoadingShipping] = useState(false);
+  const [cepError, setCepError] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     customerName: "",
     customerEmail: "",
@@ -87,24 +88,39 @@ export default function Checkout() {
     });
   };
 
+  const isValidCEP = (cep: string): boolean => {
+    const digitsOnly = cep.replace(/\D/g, '');
+    return digitsOnly.length === 8;
+  };
+
   useEffect(() => {
-    if (formData.zipCode && formData.zipCode.length >= 8) {
-      const timeoutId = setTimeout(async () => {
-        setLoadingShipping(true);
-        try {
-          const response = await api.get(`/shipping/calculate?zipCode=${formData.zipCode}`);
-          setShippingValue(response.data.value);
-        } catch (error) {
-          console.error("Error calculating shipping:", error);
-          setShippingValue(null);
-        } finally {
-          setLoadingShipping(false);
-        }
-      }, 500);
-      return () => clearTimeout(timeoutId);
-    } else {
+    if (!formData.zipCode) {
       setShippingValue(null);
+      setCepError(null);
+      return;
     }
+
+    if (!isValidCEP(formData.zipCode)) {
+      setShippingValue(null);
+      setCepError("CEP deve ter 8 dígitos");
+      return;
+    }
+
+    setCepError(null);
+    const timeoutId = setTimeout(async () => {
+      setLoadingShipping(true);
+      try {
+        const digitsOnly = formData.zipCode.replace(/\D/g, '');
+        const response = await api.get(`/shipping/calculate?zipCode=${digitsOnly}`);
+        setShippingValue(response.data.value);
+      } catch (error) {
+        console.error("Error calculating shipping:", error);
+        setShippingValue(null);
+      } finally {
+        setLoadingShipping(false);
+      }
+    }, 500);
+    return () => clearTimeout(timeoutId);
   }, [formData.zipCode]);
 
   const subtotal = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
@@ -246,7 +262,10 @@ export default function Checkout() {
             {loadingShipping && (
               <p className="text-sm text-muted-foreground">Calculando frete...</p>
             )}
-            {shippingValue !== null && !loadingShipping && (
+            {cepError && (
+              <p className="text-sm text-destructive">{cepError}</p>
+            )}
+            {shippingValue !== null && !loadingShipping && !cepError && (
               <p className="text-sm font-semibold text-primary">
                 Frete: R$ {shippingValue.toFixed(2)}
               </p>

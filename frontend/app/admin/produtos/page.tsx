@@ -11,6 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
@@ -29,6 +30,7 @@ export default function AdminProducts() {
     stock: "",
     description: "",
     imageUrl: "",
+    category: "",
   });
 
   const { data: products, isLoading } = useQuery<Product[]>({
@@ -87,6 +89,7 @@ export default function AdminProducts() {
       stock: "",
       description: "",
       imageUrl: "",
+      category: "",
     });
     setEditingProduct(null);
     setShowForm(false);
@@ -100,6 +103,7 @@ export default function AdminProducts() {
       stock: product.stock.toString(),
       description: product.description || "",
       imageUrl: product.imageUrl || "",
+      category: product.category || "",
     });
     setShowForm(true);
   };
@@ -112,6 +116,7 @@ export default function AdminProducts() {
       stock: Number(formData.stock),
       description: formData.description || undefined,
       imageUrl: formData.imageUrl || undefined,
+      category: formData.category || undefined,
     };
 
     if (editingProduct) {
@@ -249,6 +254,24 @@ export default function AdminProducts() {
                   onChange={(e) => setFormData({ ...formData, imageUrl: e.target.value })}
                 />
               </div>
+              <div className="space-y-2">
+                <Label htmlFor="category">Categoria</Label>
+                <Select
+                  value={formData.category}
+                  onValueChange={(value) => setFormData({ ...formData, category: value })}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione uma categoria" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="">Nenhuma</SelectItem>
+                    <SelectItem value="Cachorro">Cachorro</SelectItem>
+                    <SelectItem value="Gato">Gato</SelectItem>
+                    <SelectItem value="Aves">Aves</SelectItem>
+                    <SelectItem value="Farmácia">Farmácia</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
               <div className="flex gap-2">
                 <Button
                   type="submit"
@@ -282,6 +305,9 @@ export default function AdminProducts() {
                   <div className="flex gap-4 text-sm mb-2">
                     <span className="font-semibold">Preço: R$ {Number(product.price).toFixed(2)}</span>
                     <span className="font-semibold">Estoque: {product.stock}</span>
+                    {product.category && (
+                      <span className="font-semibold">Categoria: {product.category}</span>
+                    )}
                   </div>
                   {product.imageUrl && (
                     <Image
