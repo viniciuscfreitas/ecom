@@ -26,8 +26,10 @@ COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/prisma ./prisma
 COPY package.json ./
+COPY --from=builder /app/prisma/seed.ts ./prisma/seed.ts
 
 RUN npx prisma generate
+RUN npm install -g tsx
 
 COPY docker-entrypoint.sh ./
 RUN chmod +x docker-entrypoint.sh
