@@ -39,7 +39,7 @@ export default function AdminOrders() {
       toast.success("Status atualizado");
     },
     onError: () => {
-      toast.error("Erro ao atualizar status");
+      toast.error("Erro ao atualizar");
     },
   });
 
@@ -73,29 +73,41 @@ export default function AdminOrders() {
   }
 
   if (isLoading) {
-    return <div className="text-sm text-gray-500">Carregando...</div>;
+    return (
+      <div className="text-sm text-gray-600">
+        <div>Carregando...</div>
+      </div>
+    );
   }
 
   return (
     <div>
       <div className="mb-4 flex items-center justify-between">
-        <h1 className="text-lg font-medium text-gray-900">
-          Pedidos ({filteredOrders.length})
-        </h1>
-        <div className="flex gap-2">
+        <h1 className="text-lg font-medium text-gray-900">Pedidos</h1>
+        <div className="text-sm text-gray-600">
+          {filteredOrders.length} {filteredOrders.length === 1 ? "pedido" : "pedidos"}
+        </div>
+      </div>
+
+      <div className="mb-4 flex gap-4 border-b border-gray-300 pb-3">
+        <div>
+          <label className="block text-xs text-gray-600 mb-1">Tipo</label>
           <select
             value={typeFilter}
             onChange={(e) => setTypeFilter(e.target.value as OrderType)}
-            className="rounded border border-gray-300 px-2 py-1 text-xs"
+            className="px-2 py-1 text-sm border border-gray-300 bg-white"
           >
             <option value="all">Todos</option>
             <option value="delivery">Delivery</option>
             <option value="ecommerce">E-commerce</option>
           </select>
+        </div>
+        <div>
+          <label className="block text-xs text-gray-600 mb-1">Status</label>
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value as StatusFilter)}
-            className="rounded border border-gray-300 px-2 py-1 text-xs"
+            className="px-2 py-1 text-sm border border-gray-300 bg-white"
           >
             <option value="all">Todos</option>
             <option value="PENDENTE">{ORDER_STATUS_LABELS.PENDENTE}</option>
@@ -107,36 +119,20 @@ export default function AdminOrders() {
       </div>
 
       {filteredOrders.length === 0 ? (
-        <div className="text-sm text-gray-500">Nenhum pedido encontrado</div>
+        <div className="text-sm text-gray-600 py-8 text-center">Nenhum pedido encontrado</div>
       ) : (
         <div className="overflow-x-auto">
-          <table className="w-full border-collapse border border-gray-200 text-sm">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="border border-gray-200 px-3 py-2 text-left text-xs font-medium text-gray-700">
-                  ID
-                </th>
-                <th className="border border-gray-200 px-3 py-2 text-left text-xs font-medium text-gray-700">
-                  Tipo
-                </th>
-                <th className="border border-gray-200 px-3 py-2 text-left text-xs font-medium text-gray-700">
-                  Cliente
-                </th>
-                <th className="border border-gray-200 px-3 py-2 text-left text-xs font-medium text-gray-700">
-                  Status
-                </th>
-                <th className="border border-gray-200 px-3 py-2 text-left text-xs font-medium text-gray-700">
-                  Pagamento
-                </th>
-                <th className="border border-gray-200 px-3 py-2 text-left text-xs font-medium text-gray-700">
-                  Valor
-                </th>
-                <th className="border border-gray-200 px-3 py-2 text-left text-xs font-medium text-gray-700">
-                  Data
-                </th>
-                <th className="border border-gray-200 px-3 py-2 text-left text-xs font-medium text-gray-700">
-                  Ações
-                </th>
+          <table className="w-full text-sm border-collapse">
+            <thead>
+              <tr className="border-b border-gray-300">
+                <th className="text-left p-2 font-medium text-gray-900">ID</th>
+                <th className="text-left p-2 font-medium text-gray-900">Cliente</th>
+                <th className="text-left p-2 font-medium text-gray-900">Tipo</th>
+                <th className="text-left p-2 font-medium text-gray-900">Status</th>
+                <th className="text-left p-2 font-medium text-gray-900">Pagamento</th>
+                <th className="text-right p-2 font-medium text-gray-900">Total</th>
+                <th className="text-left p-2 font-medium text-gray-900">Data</th>
+                <th className="text-center p-2 font-medium text-gray-900">Ações</th>
               </tr>
             </thead>
             <tbody>
@@ -157,29 +153,41 @@ export default function AdminOrders() {
                   <>
                     <tr
                       key={order.id}
-                      className="hover:bg-gray-50 cursor-pointer"
+                      className="border-b border-gray-200 hover:bg-gray-50 cursor-pointer"
                       onClick={() => setExpandedOrder(isExpanded ? null : order.id)}
                     >
-                      <td className="border border-gray-200 px-3 py-2 font-mono text-xs text-gray-600">
-                        {order.id.slice(0, 8)}
+                      <td className="p-2 font-mono text-xs text-gray-700">{order.id.slice(0, 8)}</td>
+                      <td className="p-2">
+                        <div>{order.customerName}</div>
+                        <div className="text-xs text-gray-500">{order.customerEmail}</div>
                       </td>
-                      <td className="border border-gray-200 px-3 py-2 text-xs">
-                        {orderType === "delivery" ? "DEL" : "ECO"}
+                      <td className="p-2">
+                        <span
+                          className={`inline-block px-2 py-0.5 text-xs ${
+                            orderType === "delivery"
+                              ? "bg-blue-100 text-blue-800"
+                              : "bg-green-100 text-green-800"
+                          }`}
+                        >
+                          {orderType === "delivery" ? "DEL" : "ECO"}
+                        </span>
                       </td>
-                      <td className="border border-gray-200 px-3 py-2">
-                        <div className="text-xs">{order.customerName}</div>
-                        <div className="text-xs text-gray-500">{order.customerPhone}</div>
+                      <td className="p-2">
+                        <span className="text-xs">{ORDER_STATUS_LABELS[order.status] || order.status}</span>
                       </td>
-                      <td className="border border-gray-200 px-3 py-2 text-xs">
-                        {ORDER_STATUS_LABELS[order.status] || order.status}
+                      <td className="p-2">
+                        {order.paymentStatus && (
+                          <span
+                            className={`text-xs ${
+                              order.paymentStatus === "paid" ? "text-green-600" : "text-gray-600"
+                            }`}
+                          >
+                            {order.paymentStatus === "paid" ? "Pago" : order.paymentStatus === "pending" ? "Pendente" : "Expirado"}
+                          </span>
+                        )}
                       </td>
-                      <td className="border border-gray-200 px-3 py-2 text-xs">
-                        {order.paymentStatus === "paid" ? "Pago" : order.paymentStatus === "pending" ? "Pendente" : order.paymentStatus || "-"}
-                      </td>
-                      <td className="border border-gray-200 px-3 py-2 font-mono text-xs">
-                        R$ {total.toFixed(2)}
-                      </td>
-                      <td className="border border-gray-200 px-3 py-2 text-xs text-gray-600">
+                      <td className="p-2 text-right font-mono text-xs">R$ {total.toFixed(2)}</td>
+                      <td className="p-2 text-xs text-gray-600">
                         {new Date(order.createdAt).toLocaleDateString("pt-BR", {
                           day: "2-digit",
                           month: "2-digit",
@@ -187,7 +195,7 @@ export default function AdminOrders() {
                           minute: "2-digit",
                         })}
                       </td>
-                      <td className="border border-gray-200 px-3 py-2">
+                      <td className="p-2 text-center">
                         {canUpdateStatus && nextStatus && (
                           <button
                             onClick={(e) => {
@@ -195,66 +203,71 @@ export default function AdminOrders() {
                               handleStatusUpdate(order.id, order.status);
                             }}
                             disabled={updateStatusMutation.isPending}
-                            className="text-xs text-gray-600 hover:text-gray-900 underline disabled:opacity-50"
+                            className="px-2 py-1 text-xs bg-gray-900 text-white hover:bg-gray-800 disabled:opacity-50"
                           >
-                            → {ORDER_STATUS_LABELS[nextStatus]}
+                            {updateStatusMutation.isPending ? "..." : "→"}
                           </button>
                         )}
                       </td>
                     </tr>
                     {isExpanded && (
                       <tr>
-                        <td colSpan={8} className="border border-gray-200 bg-gray-50 px-3 py-4">
-                          <div className="space-y-3">
-                            <div className="grid grid-cols-2 gap-4 text-xs">
-                              <div>
-                                <div className="font-medium text-gray-700 mb-1">Cliente</div>
-                                <div className="text-gray-600">{order.customerName}</div>
-                                <div className="text-gray-600">{order.customerEmail}</div>
-                                <div className="text-gray-600">{order.customerPhone}</div>
-                              </div>
-                              <div>
-                                <div className="font-medium text-gray-700 mb-1">Itens</div>
+                        <td colSpan={8} className="p-4 bg-gray-50 border-b border-gray-300">
+                          <div className="grid grid-cols-2 gap-4 text-xs">
+                            <div>
+                              <div className="font-medium text-gray-900 mb-2">Itens</div>
+                              <div className="space-y-1">
                                 {order.items.map((item) => (
-                                  <div key={item.id} className="text-gray-600">
-                                    {item.product.name} x{item.quantity} - R$ {(Number(item.price) * item.quantity).toFixed(2)}
+                                  <div key={item.id} className="flex justify-between">
+                                    <span>
+                                      {item.product.name} x {item.quantity}
+                                    </span>
+                                    <span className="font-mono">R$ {(Number(item.price) * item.quantity).toFixed(2)}</span>
                                   </div>
                                 ))}
-                                <div className="mt-2 pt-2 border-t border-gray-200">
-                                  <div className="flex justify-between text-gray-600">
-                                    <span>Subtotal:</span>
-                                    <span>R$ {subtotal.toFixed(2)}</span>
+                              </div>
+                              <div className="mt-2 pt-2 border-t border-gray-300">
+                                <div className="flex justify-between">
+                                  <span>Subtotal:</span>
+                                  <span className="font-mono">R$ {subtotal.toFixed(2)}</span>
+                                </div>
+                                {shipping > 0 && (
+                                  <div className="flex justify-between">
+                                    <span>Frete:</span>
+                                    <span className="font-mono">R$ {shipping.toFixed(2)}</span>
                                   </div>
-                                  {shipping > 0 && (
-                                    <div className="flex justify-between text-gray-600">
-                                      <span>Frete:</span>
-                                      <span>R$ {shipping.toFixed(2)}</span>
-                                    </div>
-                                  )}
-                                  <div className="flex justify-between font-medium text-gray-900 mt-1">
-                                    <span>Total:</span>
-                                    <span>R$ {total.toFixed(2)}</span>
-                                  </div>
+                                )}
+                                <div className="flex justify-between font-medium mt-1">
+                                  <span>Total:</span>
+                                  <span className="font-mono">R$ {total.toFixed(2)}</span>
                                 </div>
                               </div>
                             </div>
-                            {orderType === "delivery" && order.address && (
-                              <div className="border-t border-gray-200 pt-3">
-                                <div className="font-medium text-gray-700 mb-1 text-xs">Endereço de Entrega</div>
-                                <div className="text-xs text-gray-600">
-                                  {order.address.street}, {order.address.number}
-                                  {order.address.complement && `, ${order.address.complement}`}
-                                </div>
-                                <div className="text-xs text-gray-600">
-                                  {order.address.neighborhood}, {order.address.city} - {order.address.zipCode}
-                                </div>
-                                {order.deliveryTime && (
-                                  <div className="text-xs text-gray-600 mt-1">
-                                    Horário: {order.deliveryTime === "MANHA" ? "Manhã (9h-12h)" : "Tarde (14h-18h)"}
-                                  </div>
-                                )}
+                            <div>
+                              <div className="font-medium text-gray-900 mb-2">Contato</div>
+                              <div className="space-y-1 text-gray-600">
+                                <div>Telefone: {order.customerPhone}</div>
                               </div>
-                            )}
+                              {orderType === "delivery" && order.address && (
+                                <>
+                                  <div className="font-medium text-gray-900 mt-3 mb-2">Endereço</div>
+                                  <div className="space-y-1 text-gray-600">
+                                    <div>
+                                      {order.address.street}, {order.address.number}
+                                      {order.address.complement && `, ${order.address.complement}`}
+                                    </div>
+                                    <div>
+                                      {order.address.neighborhood}, {order.address.city} - {order.address.zipCode}
+                                    </div>
+                                    {order.deliveryTime && (
+                                      <div className="mt-2">
+                                        Horário: {order.deliveryTime === "MANHA" ? "Manhã (9h-12h)" : "Tarde (14h-18h)"}
+                                      </div>
+                                    )}
+                                  </div>
+                                </>
+                              )}
+                            </div>
                           </div>
                         </td>
                       </tr>
