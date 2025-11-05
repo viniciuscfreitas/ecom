@@ -2,8 +2,6 @@
 
 import { useRouter, usePathname } from "next/navigation";
 import { useAdminAuth } from "@/lib/useAdminAuth";
-import { Button } from "@/components/ui/button";
-import { LogOut, ShoppingCart, Package } from "lucide-react";
 
 export default function AdminLayout({
   children,
@@ -28,48 +26,49 @@ export default function AdminLayout({
   };
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-white">
       <div className="flex h-screen">
-        <aside className="w-64 border-r bg-muted/40">
+        <aside className="w-48 border-r border-gray-200 bg-gray-50">
           <div className="flex h-full flex-col">
-            <div className="border-b p-6">
-              <h2 className="text-xl font-bold">Admin Panel</h2>
+            <div className="border-b border-gray-200 px-4 py-3">
+              <div className="text-sm font-medium text-gray-900">Admin</div>
             </div>
-            <nav className="flex-1 space-y-1 p-4">
-              <Button
-                variant={pathname === "/admin/pedidos" ? "default" : "ghost"}
-                className="w-full justify-start"
+            <nav className="flex-1 space-y-0.5 p-2">
+              <button
                 onClick={() => router.push("/admin/pedidos")}
+                className={`w-full text-left px-3 py-2 text-sm ${
+                  pathname === "/admin/pedidos"
+                    ? "bg-gray-200 text-gray-900"
+                    : "text-gray-600 hover:bg-gray-100"
+                }`}
               >
-                <ShoppingCart className="mr-2 h-4 w-4" />
                 Pedidos
-              </Button>
-              <Button
-                variant={pathname === "/admin/produtos" ? "default" : "ghost"}
-                className="w-full justify-start"
+              </button>
+              <button
                 onClick={() => router.push("/admin/produtos")}
+                className={`w-full text-left px-3 py-2 text-sm ${
+                  pathname === "/admin/produtos"
+                    ? "bg-gray-200 text-gray-900"
+                    : "text-gray-600 hover:bg-gray-100"
+                }`}
               >
-                <Package className="mr-2 h-4 w-4" />
                 Produtos
-              </Button>
+              </button>
             </nav>
-            <div className="border-t p-4">
-              <Button
-                variant="ghost"
-                className="w-full justify-start text-destructive hover:text-destructive"
+            <div className="border-t border-gray-200 p-2">
+              <button
                 onClick={handleLogout}
+                className="w-full text-left px-3 py-2 text-sm text-gray-600 hover:bg-gray-100"
               >
-                <LogOut className="mr-2 h-4 w-4" />
                 Sair
-              </Button>
+              </button>
             </div>
           </div>
         </aside>
-        <main className="flex-1 overflow-y-auto">
-          <div className="container mx-auto p-6">{children}</div>
+        <main className="flex-1 overflow-y-auto bg-white">
+          <div className="p-6">{children}</div>
         </main>
       </div>
     </div>
   );
 }
-
