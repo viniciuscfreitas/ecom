@@ -36,13 +36,15 @@ export default function AdminLogin() {
   };
 
   return (
-    <div className="container mx-auto px-4 py-8 max-w-md">
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-center text-3xl">Login Admin</CardTitle>
+    <div className="flex min-h-screen items-center justify-center bg-background px-4">
+      <Card className="w-full max-w-md">
+        <CardHeader className="space-y-1">
+          <CardTitle className="text-center text-2xl font-semibold tracking-tight">
+            Painel Administrativo
+          </CardTitle>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={handleSubmit} className="space-y-6">
             {error && (
               <Alert variant="destructive">
                 <AlertCircle className="h-4 w-4" />
@@ -54,10 +56,11 @@ export default function AdminLogin() {
               <Input
                 id="email"
                 type="email"
-                placeholder="Email"
+                placeholder="seu@email.com"
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
+                autoComplete="email"
               />
             </div>
             <div className="space-y-2">
@@ -65,10 +68,11 @@ export default function AdminLogin() {
               <Input
                 id="password"
                 type="password"
-                placeholder="Senha"
+                placeholder="••••••••"
                 required
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
+                autoComplete="current-password"
               />
             </div>
             <Button type="submit" disabled={loading} className="w-full" size="lg">
