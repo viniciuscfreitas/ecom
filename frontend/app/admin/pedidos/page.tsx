@@ -122,15 +122,17 @@ export default function AdminOrders() {
         <div className="text-sm text-gray-600 py-8 text-center">Nenhum pedido encontrado</div>
       ) : (
         <div className="overflow-x-auto">
-          <table className="w-full text-sm border-collapse">
+          <table className="w-full text-xs border-collapse">
             <thead>
-              <tr className="border-b border-gray-300">
+              <tr className="border-b border-gray-300 bg-gray-50">
                 <th className="text-left p-2 font-medium text-gray-900">ID</th>
-                <th className="text-left p-2 font-medium text-gray-900">Cliente</th>
+                <th className="text-left p-2 font-medium text-gray-900">Cliente / Contato</th>
                 <th className="text-left p-2 font-medium text-gray-900">Tipo</th>
                 <th className="text-left p-2 font-medium text-gray-900">Status</th>
                 <th className="text-left p-2 font-medium text-gray-900">Pagamento</th>
-                <th className="text-right p-2 font-medium text-gray-900">Total</th>
+                <th className="text-left p-2 font-medium text-gray-900">Itens</th>
+                <th className="text-left p-2 font-medium text-gray-900">Endereço</th>
+                <th className="text-right p-2 font-medium text-gray-900">Valores</th>
                 <th className="text-left p-2 font-medium text-gray-900">Data</th>
                 <th className="text-center p-2 font-medium text-gray-900">Ações</th>
               </tr>
@@ -148,22 +150,34 @@ export default function AdminOrders() {
                 const currentIndex = statusOrder.indexOf(order.status);
                 const nextStatus = currentIndex < statusOrder.length - 1 ? statusOrder[currentIndex + 1] : null;
                 const isExpanded = expandedOrder === order.id;
+                const itemsSummary = order.items.map(i => `${i.product.name} x${i.quantity}`).join(", ");
+                const addressSummary = order.address 
+                  ? `${order.address.street}, ${order.address.number}${order.address.complement ? `, ${order.address.complement}` : ""} - ${order.address.neighborhood}`
+                  : "-";
 
                 return (
                   <>
                     <tr
                       key={order.id}
-                      className="border-b border-gray-200 hover:bg-gray-50 cursor-pointer"
-                      onClick={() => setExpandedOrder(isExpanded ? null : order.id)}
+                      className={`border-b border-gray-200 hover:bg-gray-50 ${isExpanded ? "bg-gray-50" : ""}`}
                     >
-                      <td className="p-2 font-mono text-xs text-gray-700">{order.id.slice(0, 8)}</td>
+                      <td className="p-2 font-mono text-gray-700">
+                        <button
+                          onClick={() => setExpandedOrder(isExpanded ? null : order.id)}
+                          className="text-left hover:underline"
+                        >
+                          {order.id.slice(0, 8)}
+                          <span className="ml-1 text-gray-400">{isExpanded ? "▼" : "▶"}</span>
+                        </button>
+                      </td>
                       <td className="p-2">
-                        <div>{order.customerName}</div>
-                        <div className="text-xs text-gray-500">{order.customerEmail}</div>
+                        <div className="font-medium">{order.customerName}</div>
+                        <div className="text-gray-600">{order.customerEmail}</div>
+                        <div className="text-gray-500">{order.customerPhone}</div>
                       </td>
                       <td className="p-2">
                         <span
-                          className={`inline-block px-2 py-0.5 text-xs ${
+                          className={`inline-block px-2 py-0.5 ${
                             orderType === "delivery"
                               ? "bg-blue-100 text-blue-800"
                               : "bg-green-100 text-green-800"
@@ -171,29 +185,58 @@ export default function AdminOrders() {
                         >
                           {orderType === "delivery" ? "DEL" : "ECO"}
                         </span>
+                        {order.deliveryTime && (
+                          <div className="mt-1 text-gray-600">
+                            {order.deliveryTime === "MANHA" ? "Manhã" : "Tarde"}
+                          </div>
+                        )}
                       </td>
                       <td className="p-2">
-                        <span className="text-xs">{ORDER_STATUS_LABELS[order.status] || order.status}</span>
+                        <span className="font-medium">{ORDER_STATUS_LABELS[order.status] || order.status}</span>
                       </td>
                       <td className="p-2">
-                        {order.paymentStatus && (
+                        {order.paymentStatus ? (
                           <span
-                            className={`text-xs ${
-                              order.paymentStatus === "paid" ? "text-green-600" : "text-gray-600"
+                            className={`font-medium ${
+                              order.paymentStatus === "paid" ? "text-green-600" : order.paymentStatus === "pending" ? "text-orange-600" : "text-red-600"
                             }`}
                           >
                             {order.paymentStatus === "paid" ? "Pago" : order.paymentStatus === "pending" ? "Pendente" : "Expirado"}
                           </span>
+                        ) : (
+                          <span className="text-gray-400">-</span>
                         )}
                       </td>
-                      <td className="p-2 text-right font-mono text-xs">R$ {total.toFixed(2)}</td>
-                      <td className="p-2 text-xs text-gray-600">
-                        {new Date(order.createdAt).toLocaleDateString("pt-BR", {
+                      <td className="p-2 text-gray-700 max-w-sm">
+                        <div className="text-xs">{itemsSummary}</div>
+                        <div className="text-gray-500 mt-1 text-xs">{order.items.length} {order.items.length === 1 ? "item" : "itens"}</div>
+                      </td>
+                      <td className="p-2 text-gray-700 max-w-sm">
+                        {order.address ? (
+                          <div className="text-xs">{addressSummary}</div>
+                        ) : (
+                          <span className="text-gray-400 text-xs">Retirada</span>
+                        )}
+                      </td>
+                      <td className="p-2 text-right">
+                        <div className="font-mono font-medium">R$ {total.toFixed(2)}</div>
+                        <div className="text-gray-500 text-xs">
+                          {shipping > 0 && `+ R$ ${shipping.toFixed(2)} frete`}
+                        </div>
+                        <div className="text-gray-500 text-xs">Sub: R$ {subtotal.toFixed(2)}</div>
+                      </td>
+                      <td className="p-2 text-gray-600">
+                        <div>{new Date(order.createdAt).toLocaleDateString("pt-BR", {
                           day: "2-digit",
                           month: "2-digit",
-                          hour: "2-digit",
-                          minute: "2-digit",
-                        })}
+                          year: "numeric",
+                        })}</div>
+                        <div className="text-xs">
+                          {new Date(order.createdAt).toLocaleTimeString("pt-BR", {
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          })}
+                        </div>
                       </td>
                       <td className="p-2 text-center">
                         {canUpdateStatus && nextStatus && (
@@ -203,7 +246,8 @@ export default function AdminOrders() {
                               handleStatusUpdate(order.id, order.status);
                             }}
                             disabled={updateStatusMutation.isPending}
-                            className="px-2 py-1 text-xs bg-gray-900 text-white hover:bg-gray-800 disabled:opacity-50"
+                            className="px-2 py-1 bg-gray-900 text-white hover:bg-gray-800 disabled:opacity-50 text-xs"
+                            title={`Marcar como ${ORDER_STATUS_LABELS[nextStatus]}`}
                           >
                             {updateStatusMutation.isPending ? "..." : "→"}
                           </button>
@@ -212,58 +256,84 @@ export default function AdminOrders() {
                     </tr>
                     {isExpanded && (
                       <tr>
-                        <td colSpan={8} className="p-4 bg-gray-50 border-b border-gray-300">
-                          <div className="grid grid-cols-2 gap-4 text-xs">
+                        <td colSpan={10} className="p-4 bg-gray-50 border-b border-gray-300">
+                          <div className="grid grid-cols-3 gap-6">
                             <div>
-                              <div className="font-medium text-gray-900 mb-2">Itens</div>
-                              <div className="space-y-1">
+                              <div className="font-medium text-gray-900 mb-2 pb-1 border-b border-gray-300">Itens do Pedido</div>
+                              <div className="space-y-2">
                                 {order.items.map((item) => (
                                   <div key={item.id} className="flex justify-between">
-                                    <span>
-                                      {item.product.name} x {item.quantity}
+                                    <span className="text-gray-700">
+                                      {item.product.name} <span className="text-gray-500">x {item.quantity}</span>
                                     </span>
-                                    <span className="font-mono">R$ {(Number(item.price) * item.quantity).toFixed(2)}</span>
+                                    <span className="font-mono text-gray-900">R$ {(Number(item.price) * item.quantity).toFixed(2)}</span>
                                   </div>
                                 ))}
                               </div>
-                              <div className="mt-2 pt-2 border-t border-gray-300">
-                                <div className="flex justify-between">
+                              <div className="mt-3 pt-2 border-t border-gray-300 space-y-1">
+                                <div className="flex justify-between text-gray-600">
                                   <span>Subtotal:</span>
                                   <span className="font-mono">R$ {subtotal.toFixed(2)}</span>
                                 </div>
                                 {shipping > 0 && (
-                                  <div className="flex justify-between">
+                                  <div className="flex justify-between text-gray-600">
                                     <span>Frete:</span>
                                     <span className="font-mono">R$ {shipping.toFixed(2)}</span>
                                   </div>
                                 )}
-                                <div className="flex justify-between font-medium mt-1">
+                                <div className="flex justify-between font-medium text-gray-900 pt-1 border-t border-gray-300">
                                   <span>Total:</span>
                                   <span className="font-mono">R$ {total.toFixed(2)}</span>
                                 </div>
                               </div>
                             </div>
                             <div>
-                              <div className="font-medium text-gray-900 mb-2">Contato</div>
-                              <div className="space-y-1 text-gray-600">
-                                <div>Telefone: {order.customerPhone}</div>
+                              <div className="font-medium text-gray-900 mb-2 pb-1 border-b border-gray-300">Informações de Contato</div>
+                              <div className="space-y-2 text-gray-700">
+                                <div>
+                                  <span className="text-gray-500">Nome:</span> {order.customerName}
+                                </div>
+                                <div>
+                                  <span className="text-gray-500">Email:</span> {order.customerEmail}
+                                </div>
+                                <div>
+                                  <span className="text-gray-500">Telefone:</span> {order.customerPhone}
+                                </div>
+                                {order.paymentId && (
+                                  <div className="mt-2 pt-2 border-t border-gray-300">
+                                    <span className="text-gray-500">Payment ID:</span>
+                                    <div className="font-mono text-xs text-gray-600 break-all">{order.paymentId}</div>
+                                  </div>
+                                )}
                               </div>
-                              {orderType === "delivery" && order.address && (
+                            </div>
+                            <div>
+                              {orderType === "delivery" && order.address ? (
                                 <>
-                                  <div className="font-medium text-gray-900 mt-3 mb-2">Endereço</div>
-                                  <div className="space-y-1 text-gray-600">
+                                  <div className="font-medium text-gray-900 mb-2 pb-1 border-b border-gray-300">Endereço de Entrega</div>
+                                  <div className="space-y-1 text-gray-700">
                                     <div>
-                                      {order.address.street}, {order.address.number}
+                                      <span className="text-gray-500">Rua:</span> {order.address.street}, {order.address.number}
                                       {order.address.complement && `, ${order.address.complement}`}
                                     </div>
                                     <div>
-                                      {order.address.neighborhood}, {order.address.city} - {order.address.zipCode}
+                                      <span className="text-gray-500">Bairro:</span> {order.address.neighborhood}
+                                    </div>
+                                    <div>
+                                      <span className="text-gray-500">Cidade:</span> {order.address.city} - {order.address.zipCode}
                                     </div>
                                     {order.deliveryTime && (
-                                      <div className="mt-2">
-                                        Horário: {order.deliveryTime === "MANHA" ? "Manhã (9h-12h)" : "Tarde (14h-18h)"}
+                                      <div className="mt-2 pt-2 border-t border-gray-300">
+                                        <span className="text-gray-500">Horário:</span> {order.deliveryTime === "MANHA" ? "Manhã (9h-12h)" : "Tarde (14h-18h)"}
                                       </div>
                                     )}
+                                  </div>
+                                </>
+                              ) : (
+                                <>
+                                  <div className="font-medium text-gray-900 mb-2 pb-1 border-b border-gray-300">Tipo de Pedido</div>
+                                  <div className="text-gray-700">
+                                    Retirada na loja
                                   </div>
                                 </>
                               )}
